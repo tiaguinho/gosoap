@@ -6,24 +6,39 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 )
 
 type Params map[string]string
 
 //
-func SoapClient(wsdl, url string) *Client {
-	return &Client{
-		WSDL: wsdl,
-		URL:  url,
+func SoapClient(wsdl string) (*Client, error) {
+	d, err := getWsdlDefinitions(wsdl)
+	if err != nil {
+		return nil, err
 	}
+
+	u, err := url.Parse(wsdl)
+	if err != nil {
+		return nil, err
+	}
+
+	c := &Client{
+		WSDL:        wsdl,
+		URL:         fmt.Sprintf("%s://%s", u.Scheme, u.Host),
+		Definitions: d,
+	}
+
+	return c, nil
 }
 
 //
 type Client struct {
-	WSDL   string
-	URL    string
-	Method string
-	Params Params
+	WSDL        string
+	URL         string
+	Definitions *WsdlDefinitions
+	Method      string
+	Params      Params
 }
 
 //
@@ -58,7 +73,7 @@ func (c *Client) doRequest(body []byte) ([]byte, error) {
 
 	req.Header.Add("Content-Type", "text/xml;charset=UTF-8")
 	req.Header.Add("Accept", "text/xml")
-	req.Header.Add("SOAPAction", fmt.Sprintf("%s%s", c.URL, c.Method))
+	req.Header.Add("SOAPAction", fmt.Sprintf("%s/%s", c.URL, c.Method))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

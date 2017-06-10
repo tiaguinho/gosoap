@@ -15,7 +15,7 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	tokens = []xml.Token{}
 
 	//start envelope
-	startToken(c.Method, c.URL)
+	startToken(c.Method, c.Definitions.TargetNamespace)
 	for k, v := range c.Params {
 		t := xml.StartElement{
 			Name: xml.Name{
@@ -45,7 +45,7 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 }
 
 //
-func startToken(m, url string) {
+func startToken(m, n string) {
 	e := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
@@ -71,7 +71,7 @@ func startToken(m, url string) {
 			Local: m,
 		},
 		Attr: []xml.Attr{
-			{xml.Name{"", "xmlns"}, url},
+			{xml.Name{"", "xmlns"}, n},
 		},
 	}
 
