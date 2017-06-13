@@ -29,7 +29,7 @@ type soapBinding struct {
 }
 
 type wsdlTypes struct {
-	xsdSchema []*xsdSchema `xml:"http://www.w3.org/2001/XMLSchema schema"`
+	XsdSchema []*xsdSchema `xml:"http://www.w3.org/2001/XMLSchema schema"`
 }
 
 type wsdlImport struct {

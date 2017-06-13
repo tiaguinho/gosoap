@@ -33,7 +33,7 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 			},
 		}
 
-		tokens = append(tokens, t, xml.CharData(v), xml.EndElement{t.Name})
+		tokens = append(tokens, t, xml.CharData(v), xml.EndElement{Name: t.Name})
 	}
 	//end envelope
 	endToken(c.Method)
@@ -56,9 +56,9 @@ func startToken(m, n string) error {
 			Local: "soap:Envelope",
 		},
 		Attr: []xml.Attr{
-			{xml.Name{"", "xmlns:xsi"}, "http://www.w3.org/2001/XMLSchema-instance"},
-			{xml.Name{"", "xmlns:xsd"}, "http://www.w3.org/2001/XMLSchema"},
-			{xml.Name{"", "xmlns:soap"}, "http://schemas.xmlsoap.org/soap/envelope/"},
+			{Name: xml.Name{Space: "", Local: "xmlns:xsi"}, Value: "http://www.w3.org/2001/XMLSchema-instance"},
+			{Name: xml.Name{Space: "", Local: "xmlns:xsd"}, Value: "http://www.w3.org/2001/XMLSchema"},
+			{Name: xml.Name{Space: "", Local: "xmlns:soap"}, Value: "http://schemas.xmlsoap.org/soap/envelope/"},
 		},
 	}
 
@@ -79,7 +79,7 @@ func startToken(m, n string) error {
 			Local: m,
 		},
 		Attr: []xml.Attr{
-			{xml.Name{"", "xmlns"}, n},
+			{Name: xml.Name{Space: "", Local: "xmlns"}, Value: n},
 		},
 	}
 
