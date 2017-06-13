@@ -6,7 +6,7 @@ import (
 
 var tokens []xml.Token
 
-//
+// MarshalXML envelope the body and encode to xml
 func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	if len(c.Params) == 0 {
 		return nil
@@ -44,7 +44,7 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	return nil
 }
 
-//
+// startToken initiate body of the envelope
 func startToken(m, n string) {
 	e := xml.StartElement{
 		Name: xml.Name{
@@ -78,6 +78,7 @@ func startToken(m, n string) {
 	tokens = append(tokens, e, b, r)
 }
 
+// endToken close body of the envelope
 func endToken(m string) {
 	e := xml.EndElement{
 		Name: xml.Name{
