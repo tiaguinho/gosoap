@@ -6,154 +6,154 @@ import (
 	"net/http"
 )
 
-type WsdlDefinitions struct {
+type wsdlDefinitions struct {
 	Name            string           `xml:"name,attr"`
 	TargetNamespace string           `xml:"targetNamespace,attr"`
-	Imports         []*WsdlImport    `xml:"http://schemas.xmlsoap.org/wsdl/ import"`
-	Types           []*WsdlTypes     `xml:"http://schemas.xmlsoap.org/wsdl/ types"`
-	Messages        []*WsdlMessage   `xml:"http://schemas.xmlsoap.org/wsdl/ message"`
-	PortTypes       []*WsdlPortTypes `xml:"http://schemas.xmlsoap.org/wsdl/ portType"`
-	Services        []*WsdlService   `xml:"http://schemas.xmlsoap.org/wsdl/ service"`
-	Bindings        []*WsdlBinding   `xml:"http://schemas.xmlsoap.org/wsdl/ binding"`
+	Imports         []*wsdlImport    `xml:"http://schemas.xmlsoap.org/wsdl/ import"`
+	Types           []*wsdlTypes     `xml:"http://schemas.xmlsoap.org/wsdl/ types"`
+	Messages        []*wsdlMessage   `xml:"http://schemas.xmlsoap.org/wsdl/ message"`
+	PortTypes       []*wsdlPortTypes `xml:"http://schemas.xmlsoap.org/wsdl/ portType"`
+	Services        []*wsdlService   `xml:"http://schemas.xmlsoap.org/wsdl/ service"`
+	Bindings        []*wsdlBinding   `xml:"http://schemas.xmlsoap.org/wsdl/ binding"`
 }
 
-type WsdlBinding struct {
+type wsdlBinding struct {
 	Name         string           `xml:"name,attr"`
 	Type         string           `xml:"type,attr"`
-	Operations   []*WsdlOperation `xml:"http://schemas.xmlsoap.org/wsdl/ operation"`
-	SoapBindings []*SoapBinding   `xml:"http://schemas.xmlsoap.org/wsdl/soap/ binding"`
+	Operations   []*wsdlOperation `xml:"http://schemas.xmlsoap.org/wsdl/ operation"`
+	SoapBindings []*soapBinding   `xml:"http://schemas.xmlsoap.org/wsdl/soap/ binding"`
 }
 
-type SoapBinding struct {
+type soapBinding struct {
 	Transport string `xml:"transport,attr"`
 }
 
-type WsdlTypes struct {
-	XsdSchema []*XsdSchema `xml:"http://www.w3.org/2001/XMLSchema schema"`
+type wsdlTypes struct {
+	xsdSchema []*xsdSchema `xml:"http://www.w3.org/2001/XMLSchema schema"`
 }
 
-type WsdlImport struct {
+type wsdlImport struct {
 	Namespace string `xml:"namespace,attr"`
 	Location  string `xml:"location,attr"`
 }
 
-type WsdlMessage struct {
+type wsdlMessage struct {
 	Name  string             `xml:"name,attr"`
-	Parts []*WsdlMessagePart `xml:"http://schemas.xmlsoap.org/wsdl/ part"`
+	Parts []*wsdlMessagePart `xml:"http://schemas.xmlsoap.org/wsdl/ part"`
 }
 
-type WsdlMessagePart struct {
+type wsdlMessagePart struct {
 	Name    string `xml:"name,attr"`
 	Element string `xml:"element,attr"`
 }
 
-type WsdlPortTypes struct {
+type wsdlPortTypes struct {
 	Name       string           `xml:"name,attr"`
-	Operations []*WsdlOperation `xml:"http://schemas.xmlsoap.org/wsdl/ operation"`
+	Operations []*wsdlOperation `xml:"http://schemas.xmlsoap.org/wsdl/ operation"`
 }
 
-type WsdlOperation struct {
+type wsdlOperation struct {
 	Name           string                 `xml:"name,attr"`
-	Inputs         []*WsdlOperationInput  `xml:"http://schemas.xmlsoap.org/wsdl/ input"`
-	Outputs        []*WsdlOperationOutput `xml:"http://schemas.xmlsoap.org/wsdl/ output"`
-	Faults         []*WsdlOperationFault  `xml:"http://schemas.xmlsoap.org/wsdl/ fault"`
-	SoapOperations []*SoapOperation       `xml:"http://schemas.xmlsoap.org/wsdl/soap/ operation"`
+	Inputs         []*wsdlOperationInput  `xml:"http://schemas.xmlsoap.org/wsdl/ input"`
+	Outputs        []*wsdlOperationOutput `xml:"http://schemas.xmlsoap.org/wsdl/ output"`
+	Faults         []*wsdlOperationFault  `xml:"http://schemas.xmlsoap.org/wsdl/ fault"`
+	SoapOperations []*soapOperation       `xml:"http://schemas.xmlsoap.org/wsdl/soap/ operation"`
 }
 
-type WsdlOperationInput struct {
+type wsdlOperationInput struct {
 	Message    string `xml:"message,attr"`
 	WsawAction string `xml:"http://www.w3.org/2006/05/addressing/wsdl Action,attr"`
 }
 
-type WsdlOperationOutput struct {
+type wsdlOperationOutput struct {
 	Message    string `xml:"message,attr"`
 	WsawAction string `xml:"http://www.w3.org/2006/05/addressing/wsdl Action,attr"`
 }
 
-type WsdlOperationFault struct {
+type wsdlOperationFault struct {
 	Name       string `xml:"name,attr"`
 	Message    string `xml:"message,attr"`
 	WsawAction string `xml:"http://www.w3.org/2006/05/addressing/wsdl Action,attr"`
 }
 
-type WsdlService struct {
+type wsdlService struct {
 	Name  string      `xml:"name,attr"`
-	Ports []*WsdlPort `xml:"http://schemas.xmlsoap.org/wsdl/ port"`
+	Ports []*wsdlPort `xml:"http://schemas.xmlsoap.org/wsdl/ port"`
 }
 
-type WsdlPort struct {
+type wsdlPort struct {
 	Name          string         `xml:"name,attr"`
 	Binding       string         `xml:"binding,attr"`
-	SoapAddresses []*SoapAddress `xml:"http://schemas.xmlsoap.org/wsdl/soap/ address"`
+	SoapAddresses []*soapAddress `xml:"http://schemas.xmlsoap.org/wsdl/soap/ address"`
 }
 
-type SoapAddress struct {
+type soapAddress struct {
 	Location string `xml:"location,attr"`
 }
 
-type SoapOperation struct {
+type soapOperation struct {
 	SoapAction string `xml:"soapAction,attr"`
 	Style      string `xml:"style,attr"`
 }
 
-type XsdSchema struct {
+type xsdSchema struct {
 	TargetNamespace    string            `xml:"targetNamespace,attr"`
 	ElementFormDefault string            `xml:"elementFormDefault,attr"`
-	Imports            []*XsdImport      `xml:"http://www.w3.org/2001/XMLSchema import"`
-	Elements           []*XsdElement     `xml:"http://www.w3.org/2001/XMLSchema element"`
-	ComplexTypes       []*XsdComplexType `xml:"http://www.w3.org/2001/XMLSchema complexType"`
+	Imports            []*xsdImport      `xml:"http://www.w3.org/2001/XMLSchema import"`
+	Elements           []*xsdElement     `xml:"http://www.w3.org/2001/XMLSchema element"`
+	ComplexTypes       []*xsdComplexType `xml:"http://www.w3.org/2001/XMLSchema complexType"`
 }
 
-type XsdImport struct {
+type xsdImport struct {
 	SchemaLocation string `xml:"schemaLocation,attr"`
 	Namespace      string `xml:"namespace,attr"`
 }
 
-type XsdElement struct {
+type xsdElement struct {
 	Name        string          `xml:"name,attr"`
 	Nillable    bool            `xml:"nillable,attr"`
 	Type        string          `xml:"type,attr"`
 	MinOccurs   string          `xml:"minOccurs,attr"`
 	MaxOccurs   string          `xml:"maxOccurs,attr"`
-	ComplexType *XsdComplexType `xml:"http://www.w3.org/2001/XMLSchema complexType"`
-	SimpleType  *XsdSimpleType  `xml:"http://www.w3.org/2001/XMLSchema simpleType"`
+	ComplexType *xsdComplexType `xml:"http://www.w3.org/2001/XMLSchema complexType"`
+	SimpleType  *xsdSimpleType  `xml:"http://www.w3.org/2001/XMLSchema simpleType"`
 }
 
-type XsdComplexType struct {
+type xsdComplexType struct {
 	Name     string       `xml:"name,attr"`
-	Sequence *XsdSequence `xml:"http://www.w3.org/2001/XMLSchema sequence"`
+	Sequence *xsdSequence `xml:"http://www.w3.org/2001/XMLSchema sequence"`
 }
 
-type XsdSimpleType struct {
+type xsdSimpleType struct {
 	Name     string          `xml:"name,attr"`
-	Sequence *XsdRestriction `xml:"http://www.w3.org/2001/XMLSchema restriction"`
+	Sequence *xsdRestriction `xml:"http://www.w3.org/2001/XMLSchema restriction"`
 }
 
-type XsdSequence struct {
-	Elements []*XsdElement `xml:"http://www.w3.org/2001/XMLSchema element"`
+type xsdSequence struct {
+	Elements []*xsdElement `xml:"http://www.w3.org/2001/XMLSchema element"`
 }
 
-type XsdRestriction struct {
+type xsdRestriction struct {
 	Base         string           `xml:"base,attr"`
-	Pattern      *XsdPattern      `xml:"http://www.w3.org/2001/XMLSchema pattern"`
-	MinInclusive *XsdMinInclusive `xml:"http://www.w3.org/2001/XMLSchema minInclusive"`
-	MaxInclusive *XsdMaxInclusive `xml:"http://www.w3.org/2001/XMLSchema maxInclusive"`
+	Pattern      *xsdPattern      `xml:"http://www.w3.org/2001/XMLSchema pattern"`
+	MinInclusive *xsdMinInclusive `xml:"http://www.w3.org/2001/XMLSchema minInclusive"`
+	MaxInclusive *xsdMaxInclusive `xml:"http://www.w3.org/2001/XMLSchema maxInclusive"`
 }
 
-type XsdPattern struct {
+type xsdPattern struct {
 	Value string `xml:"value,attr"`
 }
 
-type XsdMinInclusive struct {
+type xsdMinInclusive struct {
 	Value string `xml:"value,attr"`
 }
 
-type XsdMaxInclusive struct {
+type xsdMaxInclusive struct {
 	Value string `xml:"value,attr"`
 }
 
-// getWsdlDefinitions sent request to the wsdl url and set definitions on struct
-func getWsdlDefinitions(u string) (wsdl *WsdlDefinitions, err error) {
+// getwsdlDefinitions sent request to the wsdl url and set definitions on struct
+func getWsdlDefinitions(u string) (wsdl *wsdlDefinitions, err error) {
 	r, err := http.Get(u)
 	if err != nil {
 		return nil, err

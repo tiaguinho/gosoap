@@ -6,19 +6,19 @@ import (
 
 var (
 	scts = []struct {
-		Url string
+		URL string
 		Err bool
 	}{
 		{
-			Url: "://www.server",
+			URL: "://www.server",
 			Err: false,
 		},
 		{
-			Url: "",
+			URL: "",
 			Err: false,
 		},
 		{
-			Url: "http://www.webservicex.net/geoipservice.asmx?WSDL",
+			URL: "http://www.webservicex.net/geoipservice.asmx?WSDL",
 			Err: true,
 		},
 	}
@@ -26,9 +26,9 @@ var (
 
 func TestSoapClient(t *testing.T) {
 	for _, sct := range scts {
-		_, err := SoapClient(sct.Url)
+		_, err := SoapClient(sct.URL)
 		if err != nil && sct.Err {
-			t.Errorf("URL: %s - error: %s", sct.Url, err)
+			t.Errorf("URL: %s - error: %s", sct.URL, err)
 		}
 	}
 }

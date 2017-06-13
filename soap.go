@@ -9,6 +9,7 @@ import (
 	"net/url"
 )
 
+// Params type is used to set the params in soap request
 type Params map[string]string
 
 // SoapClient return new *Client to handle the requests with the WSDL
@@ -39,7 +40,7 @@ type Client struct {
 	URL         string
 	Method      string
 	Params      Params
-	Definitions *WsdlDefinitions
+	Definitions *wsdlDefinitions
 	Body        []byte
 
 	payload []byte
