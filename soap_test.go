@@ -1,30 +1,42 @@
-package gosoap_test
+package gosoap
 
 import (
-	"encoding/xml"
-	"github.com/tiaguinho/gosoap"
-	"reflect"
 	"testing"
 )
 
-//
-func TestSoapClient(t *testing.T) {
-	soap, err := gosoap.SoapClient("http://www.webservicex.net/geoipservice.asmx?WSDL")
-	if err != nil {
-		t.Errorf("error not expected: %s", err)
+var (
+	scts = []struct {
+		Url string
+		Err bool
+	}{
+		{
+			Url: "://www.server",
+			Err: false,
+		},
+		{
+			Url: "",
+			Err: false,
+		},
+		{
+			Url: "http://www.webservicex.net/geoipservice.asmx?WSDL",
+			Err: true,
+		},
 	}
+)
 
-	if reflect.DeepEqual(soap, &gosoap.Client{}) {
-		t.Errorf("got: \n %s", soap)
+func TestSoapClient(t *testing.T) {
+	for _, sct := range scts {
+		_, err := SoapClient(sct.Url)
+		if err != nil && sct.Err {
+			t.Errorf("URL: %s - error: %s", sct.Url, err)
+		}
 	}
 }
 
-//
 type GetGeoIPResponse struct {
 	GetGeoIPResult GetGeoIPResult
 }
 
-//
 type GetGeoIPResult struct {
 	ReturnCode        string
 	IP                string
@@ -33,55 +45,69 @@ type GetGeoIPResult struct {
 	CountryCode       string
 }
 
-//
+var (
+	r GetGeoIPResponse
+
+	params = Params{}
+)
+
 func TestClient_Call(t *testing.T) {
-	soap, err := gosoap.SoapClient("http://www.webservicex.net/geoipservice.asmx?WSDL")
+	soap, err := SoapClient("http://www.webservicex.net/geoipservice.asmx?WSDL")
 	if err != nil {
 		t.Errorf("error not expected: %s", err)
 	}
 
-	params := gosoap.Params{
-		"IPAddress": "8.8.8.8",
+	err = soap.Call("GetGeoIP", params)
+	if err == nil {
+		t.Errorf("params is empty")
 	}
 
-	b, err := soap.Call("GetGeoIP", params)
+	params["IPAddress"] = "8.8.8.8"
+	err = soap.Call("", params)
+	if err == nil {
+		t.Errorf("method is empty")
+	}
+
+	err = soap.Unmarshal(&r)
+	if err == nil {
+		t.Errorf("body is empty")
+	}
+
+	err = soap.Call("GetGeoIP", params)
 	if err != nil {
 		t.Errorf("error in soap call: %s", err)
 	}
 
-	var r GetGeoIPResponse
-	xml.Unmarshal(b, &r)
-
+	soap.Unmarshal(&r)
 	if r.GetGeoIPResult.CountryCode != "USA" {
 		t.Errorf("error: %+v", r)
 	}
+
+	c := &Client{}
+	err = c.Call("", Params{})
+	if err == nil {
+		t.Errorf("error expected but nothing got.")
+	}
+
+	c.WSDL = "://test."
+
+	err = c.Call("GetGeoIP", params)
+	if err == nil {
+		t.Errorf("invalid WSDL")
+	}
 }
 
-//
-type GetWhoISResponse struct {
-	GetWhoISResult string
-}
+func TestClient_doRequest(t *testing.T) {
+	c := &Client{}
 
-//
-func TestClient_Call2(t *testing.T) {
-	soap, err := gosoap.SoapClient("http://www.webservicex.net/whois.asmx?WSDL")
-	if err != nil {
-		t.Errorf("error not expected: %s", err)
+	_, err := c.doRequest()
+	if err == nil {
+		t.Errorf("body is empty")
 	}
 
-	params := gosoap.Params{
-		"HostName": "github.com",
-	}
-
-	b, err := soap.Call("GetWhoIS", params)
-	if err != nil {
-		t.Errorf("error in soap call: %s", err)
-	}
-
-	var r GetWhoISResponse
-	xml.Unmarshal(b, &r)
-
-	if r.GetWhoISResult == "" {
-		t.Errorf("error: %+v", r)
+	c.WSDL = "://teste."
+	_, err = c.doRequest()
+	if err == nil {
+		t.Errorf("invalid WSDL")
 	}
 }

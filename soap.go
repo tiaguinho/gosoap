@@ -11,14 +11,14 @@ import (
 
 type Params map[string]string
 
-//
+// SoapClient return new *Client to handle the requests with the WSDL
 func SoapClient(wsdl string) (*Client, error) {
-	d, err := getWsdlDefinitions(wsdl)
+	u, err := url.Parse(wsdl)
 	if err != nil {
 		return nil, err
 	}
 
-	u, err := url.Parse(wsdl)
+	d, err := getWsdlDefinitions(wsdl)
 	if err != nil {
 		return nil, err
 	}
@@ -32,67 +32,83 @@ func SoapClient(wsdl string) (*Client, error) {
 	return c, nil
 }
 
-//
+// Client struct hold all the informations about WSDL,
+// request and response of the server
 type Client struct {
 	WSDL        string
 	URL         string
-	Definitions *WsdlDefinitions
 	Method      string
 	Params      Params
+	Definitions *WsdlDefinitions
+	Body        []byte
+
+	payload []byte
 }
 
-//
-func (c *Client) Call(m string, p Params) ([]byte, error) {
+// Call call's the method m with Params p
+func (c *Client) Call(m string, p Params) (err error) {
 	c.Method = m
 	c.Params = p
 
-	b, err := xml.MarshalIndent(c, "", "")
+	c.payload, err = xml.MarshalIndent(c, "", "")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	b, err = c.doRequest(b)
+	b, err := c.doRequest()
 	if err != nil {
-
+		return err
 	}
 
 	var soap SoapEnvelope
 	err = xml.Unmarshal(b, &soap)
 
-	return soap.Body.Contents, err
+	c.Body = soap.Body.Contents
+
+	return err
 }
 
-//
-func (c *Client) doRequest(body []byte) ([]byte, error) {
-	req, err := http.NewRequest("POST", c.WSDL, bytes.NewBuffer(body))
-	if err != nil {
-
+// Unmarshal get the body and unmarshal into the interface
+func (c *Client) Unmarshal(v interface{}) error {
+	if len(c.Body) == 0 {
+		return fmt.Errorf("Body is empty")
 	}
 
-	req.ContentLength = int64(len(body))
+	return xml.Unmarshal(c.Body, v)
+}
+
+// doRequest makes new request to the server using the c.Method, c.URL and the body.
+// body is enveloped in Call method
+func (c *Client) doRequest() ([]byte, error) {
+	req, err := http.NewRequest("POST", c.WSDL, bytes.NewBuffer(c.payload))
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{}
+
+	req.ContentLength = int64(len(c.payload))
 
 	req.Header.Add("Content-Type", "text/xml;charset=UTF-8")
 	req.Header.Add("Accept", "text/xml")
 	req.Header.Add("SOAPAction", fmt.Sprintf("%s/%s", c.URL, c.Method))
 
-	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	b, err := ioutil.ReadAll(resp.Body)
-
-	return b, err
+	return ioutil.ReadAll(resp.Body)
 }
 
-//
+// SoapEnvelope struct
 type SoapEnvelope struct {
 	XMLName struct{} `xml:"Envelope"`
 	Body    SoapBody
 }
 
+// SoapBody struct
 type SoapBody struct {
 	XMLName  struct{} `xml:"Body"`
 	Contents []byte   `xml:",innerxml"`

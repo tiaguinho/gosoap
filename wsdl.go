@@ -160,12 +160,8 @@ func getWsdlDefinitions(u string) (wsdl *WsdlDefinitions, err error) {
 	}
 	defer r.Body.Close()
 
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, err
-	}
+	b, _ := ioutil.ReadAll(r.Body)
+	err = xml.Unmarshal(b, &wsdl)
 
-	xml.Unmarshal(b, &wsdl)
-
-	return wsdl, nil
+	return wsdl, err
 }

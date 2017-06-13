@@ -2,6 +2,7 @@ package gosoap
 
 import (
 	"encoding/xml"
+	"fmt"
 )
 
 var tokens []xml.Token
@@ -9,13 +10,21 @@ var tokens []xml.Token
 // MarshalXML envelope the body and encode to xml
 func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	if len(c.Params) == 0 {
-		return nil
+		return fmt.Errorf("Params is empty")
 	}
 
 	tokens = []xml.Token{}
 
 	//start envelope
-	startToken(c.Method, c.Definitions.TargetNamespace)
+	if c.Definitions == nil {
+		return fmt.Errorf("definitions is nil")
+	}
+
+	err := startToken(c.Method, c.Definitions.TargetNamespace)
+	if err != nil {
+		return err
+	}
+
 	for k, v := range c.Params {
 		t := xml.StartElement{
 			Name: xml.Name{
@@ -36,16 +45,11 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 		}
 	}
 
-	err := e.Flush()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return e.Flush()
 }
 
 // startToken initiate body of the envelope
-func startToken(m, n string) {
+func startToken(m, n string) error {
 	e := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
@@ -65,6 +69,10 @@ func startToken(m, n string) {
 		},
 	}
 
+	if m == "" || n == "" {
+		return fmt.Errorf("method or namespace is empty")
+	}
+
 	r := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
@@ -76,6 +84,8 @@ func startToken(m, n string) {
 	}
 
 	tokens = append(tokens, e, b, r)
+
+	return nil
 }
 
 // endToken close body of the envelope
