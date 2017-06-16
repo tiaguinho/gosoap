@@ -165,3 +165,10 @@ func getWsdlDefinitions(u string) (wsdl *wsdlDefinitions, err error) {
 
 	return wsdl, err
 }
+
+// Fault response
+type Fault struct {
+	Code        string `xml:"faultcode"`
+	Description string `xml:"faultstring"`
+	Detail      string `xml:"detail"`
+}

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // Params type is used to set the params in soap request
@@ -14,7 +15,7 @@ type Params map[string]string
 
 // SoapClient return new *Client to handle the requests with the WSDL
 func SoapClient(wsdl string) (*Client, error) {
-	u, err := url.Parse(wsdl)
+	_, err := url.Parse(wsdl)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +27,7 @@ func SoapClient(wsdl string) (*Client, error) {
 
 	c := &Client{
 		WSDL:        wsdl,
-		URL:         fmt.Sprintf("%s://%s", u.Scheme, u.Host),
+		URL:         strings.TrimSuffix(d.TargetNamespace, "/"),
 		Definitions: d,
 	}
 
@@ -73,6 +74,12 @@ func (c *Client) Call(m string, p Params) (err error) {
 func (c *Client) Unmarshal(v interface{}) error {
 	if len(c.Body) == 0 {
 		return fmt.Errorf("Body is empty")
+	}
+
+	var f Fault
+	xml.Unmarshal(c.Body, &f)
+	if f.Code != "" {
+		return fmt.Errorf("[%s]: %s", f.Code, f.Description)
 	}
 
 	return xml.Unmarshal(c.Body, v)
