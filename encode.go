@@ -9,9 +9,6 @@ var tokens []xml.Token
 
 // MarshalXML envelope the body and encode to xml
 func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
-	if len(c.Params) == 0 {
-		return fmt.Errorf("Params is empty")
-	}
 
 	tokens = []xml.Token{}
 
@@ -20,7 +17,24 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 		return fmt.Errorf("definitions is nil")
 	}
 
-	err := startToken(c.Method, c.Definitions.TargetNamespace)
+	startEnvelope()
+	if len(c.HeaderParams) > 0 {
+		startHeader()
+		for k, v := range c.HeaderParams {
+			t := xml.StartElement{
+				Name: xml.Name{
+					Space: "",
+					Local: k,
+				},
+			}
+
+			tokens = append(tokens, t, xml.CharData(v), xml.EndElement{Name: t.Name})
+		}
+
+		endHeader()
+	}
+
+	err := startBody(c.Method, c.Definitions.TargetNamespace)
 	if err != nil {
 		return err
 	}
@@ -36,7 +50,8 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 		tokens = append(tokens, t, xml.CharData(v), xml.EndElement{Name: t.Name})
 	}
 	//end envelope
-	endToken(c.Method)
+	endBody(c.Method)
+	endEnvelope()
 
 	for _, t := range tokens {
 		err := e.EncodeToken(t)
@@ -48,8 +63,7 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	return e.Flush()
 }
 
-// startToken initiate body of the envelope
-func startToken(m, n string) error {
+func startEnvelope() {
 	e := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
@@ -62,6 +76,44 @@ func startToken(m, n string) error {
 		},
 	}
 
+	tokens = append(tokens, e)
+}
+
+func endEnvelope() {
+	e := xml.EndElement{
+		Name: xml.Name{
+			Space: "",
+			Local: "soap:Envelope",
+		},
+	}
+
+	tokens = append(tokens, e)
+}
+
+func startHeader() {
+	h := xml.StartElement{
+		Name: xml.Name{
+			Space: "",
+			Local: "soap:Header",
+		},
+	}
+
+	tokens = append(tokens, h)
+}
+
+func endHeader() {
+	h := xml.EndElement{
+		Name: xml.Name{
+			Space: "",
+			Local: "soap:Header",
+		},
+	}
+
+	tokens = append(tokens, h)
+}
+
+// startToken initiate body of the envelope
+func startBody(m, n string) error {
 	b := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
@@ -83,20 +135,13 @@ func startToken(m, n string) error {
 		},
 	}
 
-	tokens = append(tokens, e, b, r)
+	tokens = append(tokens, b, r)
 
 	return nil
 }
 
 // endToken close body of the envelope
-func endToken(m string) {
-	e := xml.EndElement{
-		Name: xml.Name{
-			Space: "",
-			Local: "soap:Envelope",
-		},
-	}
-
+func endBody(m string) {
 	b := xml.EndElement{
 		Name: xml.Name{
 			Space: "",
@@ -111,5 +156,5 @@ func endToken(m string) {
 		},
 	}
 
-	tokens = append(tokens, r, b, e)
+	tokens = append(tokens, r, b)
 }
