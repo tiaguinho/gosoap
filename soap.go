@@ -37,12 +37,14 @@ func SoapClient(wsdl string) (*Client, error) {
 // Client struct hold all the informations about WSDL,
 // request and response of the server
 type Client struct {
-	WSDL        string
-	URL         string
-	Method      string
-	Params      Params
-	Definitions *wsdlDefinitions
-	Body        []byte
+	WSDL         string
+	URL          string
+	Method       string
+	Params       Params
+	HeaderParams Params
+	Definitions  *wsdlDefinitions
+	Body         []byte
+	Header       []byte
 
 	payload []byte
 }
@@ -66,6 +68,7 @@ func (c *Client) Call(m string, p Params) (err error) {
 	err = xml.Unmarshal(b, &soap)
 
 	c.Body = soap.Body.Contents
+	c.Header = soap.Header.Contents
 
 	return err
 }
@@ -113,7 +116,14 @@ func (c *Client) doRequest() ([]byte, error) {
 // SoapEnvelope struct
 type SoapEnvelope struct {
 	XMLName struct{} `xml:"Envelope"`
+	Header  SoapHeader
 	Body    SoapBody
+}
+
+// SoapHeader struct
+type SoapHeader struct {
+	XMLName  struct{} `xml:"Header"`
+	Contents []byte   `xml:",innerxml"`
 }
 
 // SoapBody struct
