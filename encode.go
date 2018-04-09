@@ -9,9 +9,6 @@ var tokens []xml.Token
 
 // MarshalXML envelope the body and encode to xml
 func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
-	if len(c.Params) == 0 {
-		return fmt.Errorf("Params is empty")
-	}
 
 	tokens = []xml.Token{}
 
