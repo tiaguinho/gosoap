@@ -41,6 +41,7 @@ type Client struct {
 	URL          string
 	Method       string
 	Params       Params
+	HeaderName   string
 	HeaderParams Params
 	Definitions  *wsdlDefinitions
 	Body         []byte
