@@ -1,6 +1,7 @@
 package gosoap
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -18,7 +19,7 @@ var (
 			Err: false,
 		},
 		{
-			URL: "http://www.webservicex.net/geoipservice.asmx?WSDL",
+			URL: "http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl",
 			Err: true,
 		},
 	}
@@ -33,36 +34,29 @@ func TestSoapClient(t *testing.T) {
 	}
 }
 
-type GetGeoIPResponse struct {
-	GetGeoIPResult GetGeoIPResult
-}
-
-type GetGeoIPResult struct {
-	ReturnCode        string
-	IP                string
-	ReturnCodeDetails string
-	CountryName       string
-	CountryCode       string
+type CheckVatResponse struct {
+	CountryCode string `xml:"countryCode"`
+	VatNumber   string `xml:"vatNumber"`
+	RequestDate string `xml:"requestDate"`
+	Valid       string `xml:"valid"`
+	name        string `xml:"name"`
+	Address     string `xml:"address"`
 }
 
 var (
-	r GetGeoIPResponse
+	r CheckVatResponse
 
 	params = Params{}
 )
 
 func TestClient_Call(t *testing.T) {
-	soap, err := SoapClient("http://www.webservicex.net/geoipservice.asmx?WSDL")
+	soap, err := SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl")
 	if err != nil {
 		t.Errorf("error not expected: %s", err)
 	}
 
-	err = soap.Call("GetGeoIP", params)
-	if err == nil {
-		t.Errorf("params is empty")
-	}
-
-	params["IPAddress"] = "8.8.8.8"
+	params["vatNumber"] = "6388047V"
+	params["countryCode"] = "IE"
 	err = soap.Call("", params)
 	if err == nil {
 		t.Errorf("method is empty")
@@ -73,13 +67,15 @@ func TestClient_Call(t *testing.T) {
 		t.Errorf("body is empty")
 	}
 
-	err = soap.Call("GetGeoIP", params)
+	err = soap.Call("checkVat", params)
 	if err != nil {
 		t.Errorf("error in soap call: %s", err)
 	}
 
+	fmt.Println(string(soap.GetLastRequest()))
+	fmt.Println(string(soap.Body))
 	soap.Unmarshal(&r)
-	if r.GetGeoIPResult.CountryCode != "USA" {
+	if r.CountryCode != "IE" {
 		t.Errorf("error: %+v", r)
 	}
 
@@ -91,7 +87,7 @@ func TestClient_Call(t *testing.T) {
 
 	c.WSDL = "://test."
 
-	err = c.Call("GetGeoIP", params)
+	err = c.Call("checkVat", params)
 	if err == nil {
 		t.Errorf("invalid WSDL")
 	}
@@ -100,13 +96,12 @@ func TestClient_Call(t *testing.T) {
 func TestClient_doRequest(t *testing.T) {
 	c := &Client{}
 
-	_, err := c.doRequest()
+	_, err := c.doRequest("")
 	if err == nil {
 		t.Errorf("body is empty")
 	}
 
-	c.WSDL = "://teste."
-	_, err = c.doRequest()
+	_, err = c.doRequest("://teste.")
 	if err == nil {
 		t.Errorf("invalid WSDL")
 	}

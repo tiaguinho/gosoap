@@ -9,6 +9,7 @@ var tokens []xml.Token
 
 // MarshalXML envelope the body and encode to xml
 func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
+
 	tokens = []xml.Token{}
 
 	//start envelope
@@ -33,7 +34,7 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 		endHeader()
 	}
 
-	err := startBody(c.Method, c.Definitions.TargetNamespace)
+	err := startBody(c.Method, c.Definitions.Types[0].XsdSchema[0].TargetNamespace)
 	if err != nil {
 		return err
 	}
