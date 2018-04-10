@@ -1,7 +1,6 @@
 package gosoap
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -25,7 +24,6 @@ func TestClient_MarshalXML(t *testing.T) {
 
 	for _, test := range tests {
 		err = soap.Call("checkVat", test.Params)
-		fmt.Println(err)
 		if err == nil {
 			t.Errorf(test.Err)
 		}

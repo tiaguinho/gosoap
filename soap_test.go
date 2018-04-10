@@ -1,7 +1,6 @@
 package gosoap
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -72,8 +71,6 @@ func TestClient_Call(t *testing.T) {
 		t.Errorf("error in soap call: %s", err)
 	}
 
-	fmt.Println(string(soap.GetLastRequest()))
-	fmt.Println(string(soap.Body))
 	soap.Unmarshal(&r)
 	if r.CountryCode != "IE" {
 		t.Errorf("error: %+v", r)
