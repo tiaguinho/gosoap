@@ -49,6 +49,10 @@ type Client struct {
 	payload []byte
 }
 
+func (c *Client) GetLastRequest() []byte {
+	return c.payload
+}
+
 // Call call's the method m with Params p
 func (c *Client) Call(m string, p Params) (err error) {
 	c.Method = m
