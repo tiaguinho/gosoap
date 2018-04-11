@@ -42,8 +42,23 @@ type CheckVatResponse struct {
 	Address     string `xml:"address"`
 }
 
+type CapitalCityResponse struct {
+	CapitalCityResult string
+}
+
+type NumberToWordsResponse struct {
+	NumberToWordsResult string
+}
+
+type WhoisResponse struct {
+	WhoisResult string
+}
+
 var (
-	r CheckVatResponse
+	rv CheckVatResponse
+	rc CapitalCityResponse
+	rn NumberToWordsResponse
+	rw WhoisResponse
 
 	params = Params{}
 )
@@ -61,7 +76,7 @@ func TestClient_Call(t *testing.T) {
 		t.Errorf("method is empty")
 	}
 
-	err = soap.Unmarshal(&r)
+	err = soap.Unmarshal(&rv)
 	if err == nil {
 		t.Errorf("body is empty")
 	}
@@ -71,9 +86,57 @@ func TestClient_Call(t *testing.T) {
 		t.Errorf("error in soap call: %s", err)
 	}
 
-	soap.Unmarshal(&r)
-	if r.CountryCode != "IE" {
-		t.Errorf("error: %+v", r)
+	soap.Unmarshal(&rv)
+	if rv.CountryCode != "IE" {
+		t.Errorf("error: %+v", rv)
+	}
+
+	soap, err = SoapClient("http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL")
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	err = soap.Call("CapitalCity", Params{"sCountryISOCode": "GB"})
+	if err != nil {
+		t.Errorf("error in soap call: %s", err)
+	}
+
+	soap.Unmarshal(&rc)
+
+	if rc.CapitalCityResult != "London" {
+		t.Errorf("error: %+v", rc)
+	}
+
+	soap, err = SoapClient("http://www.dataaccess.com/webservicesserver/numberconversion.wso?WSDL")
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	err = soap.Call("NumberToWords", Params{"ubiNum": "23"})
+	if err != nil {
+		t.Errorf("error in soap call: %s", err)
+	}
+
+	soap.Unmarshal(&rn)
+
+	if rn.NumberToWordsResult != "twenty three " {
+		t.Errorf("error: %+v", rn)
+	}
+
+	soap, err = SoapClient("https://domains.livedns.co.il/API/DomainsAPI.asmx?WSDL")
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	err = soap.Call("Whois", Params{"DomainName": "google.com"})
+	if err != nil {
+		t.Errorf("error in soap call: %s", err)
+	}
+
+	soap.Unmarshal(&rw)
+
+	if rw.WhoisResult != "0" {
+		t.Errorf("error: %+v", rw)
 	}
 
 	c := &Client{}
