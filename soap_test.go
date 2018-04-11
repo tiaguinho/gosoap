@@ -18,7 +18,7 @@ var (
 			Err: false,
 		},
 		{
-			URL: "http://www.webservicex.net/geoipservice.asmx?WSDL",
+			URL: "http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl",
 			Err: true,
 		},
 	}
@@ -33,54 +33,110 @@ func TestSoapClient(t *testing.T) {
 	}
 }
 
-type GetGeoIPResponse struct {
-	GetGeoIPResult GetGeoIPResult
+type CheckVatResponse struct {
+	CountryCode string `xml:"countryCode"`
+	VatNumber   string `xml:"vatNumber"`
+	RequestDate string `xml:"requestDate"`
+	Valid       string `xml:"valid"`
+	name        string `xml:"name"`
+	Address     string `xml:"address"`
 }
 
-type GetGeoIPResult struct {
-	ReturnCode        string
-	IP                string
-	ReturnCodeDetails string
-	CountryName       string
-	CountryCode       string
+type CapitalCityResponse struct {
+	CapitalCityResult string
+}
+
+type NumberToWordsResponse struct {
+	NumberToWordsResult string
+}
+
+type WhoisResponse struct {
+	WhoisResult string
 }
 
 var (
-	r GetGeoIPResponse
+	rv CheckVatResponse
+	rc CapitalCityResponse
+	rn NumberToWordsResponse
+	rw WhoisResponse
 
 	params = Params{}
 )
 
 func TestClient_Call(t *testing.T) {
-	soap, err := SoapClient("http://www.webservicex.net/geoipservice.asmx?WSDL")
+	soap, err := SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl")
 	if err != nil {
 		t.Errorf("error not expected: %s", err)
 	}
 
-	err = soap.Call("GetGeoIP", params)
-	if err == nil {
-		t.Errorf("params is empty")
-	}
-
-	params["IPAddress"] = "8.8.8.8"
+	params["vatNumber"] = "6388047V"
+	params["countryCode"] = "IE"
 	err = soap.Call("", params)
 	if err == nil {
 		t.Errorf("method is empty")
 	}
 
-	err = soap.Unmarshal(&r)
+	err = soap.Unmarshal(&rv)
 	if err == nil {
 		t.Errorf("body is empty")
 	}
 
-	err = soap.Call("GetGeoIP", params)
+	err = soap.Call("checkVat", params)
 	if err != nil {
 		t.Errorf("error in soap call: %s", err)
 	}
 
-	soap.Unmarshal(&r)
-	if r.GetGeoIPResult.CountryCode != "USA" {
-		t.Errorf("error: %+v", r)
+	soap.Unmarshal(&rv)
+	if rv.CountryCode != "IE" {
+		t.Errorf("error: %+v", rv)
+	}
+
+	soap, err = SoapClient("http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL")
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	err = soap.Call("CapitalCity", Params{"sCountryISOCode": "GB"})
+	if err != nil {
+		t.Errorf("error in soap call: %s", err)
+	}
+
+	soap.Unmarshal(&rc)
+
+	if rc.CapitalCityResult != "London" {
+		t.Errorf("error: %+v", rc)
+	}
+
+	soap, err = SoapClient("http://www.dataaccess.com/webservicesserver/numberconversion.wso?WSDL")
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	err = soap.Call("NumberToWords", Params{"ubiNum": "23"})
+	if err != nil {
+		t.Errorf("error in soap call: %s", err)
+	}
+
+	soap.Unmarshal(&rn)
+
+	if rn.NumberToWordsResult != "twenty three " {
+		t.Errorf("error: %+v", rn)
+	}
+
+	soap, err = SoapClient("https://domains.livedns.co.il/API/DomainsAPI.asmx?WSDL")
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	err = soap.Call("Whois", Params{"DomainName": "google.com"})
+	if err != nil {
+		t.Errorf("error in soap call: %s", err)
+	}
+
+	soap.Unmarshal(&rw)
+
+	if rw.WhoisResult != "0" {
+		t.Errorf("error: %+v", rw)
 	}
 
 	c := &Client{}
@@ -91,7 +147,7 @@ func TestClient_Call(t *testing.T) {
 
 	c.WSDL = "://test."
 
-	err = c.Call("GetGeoIP", params)
+	err = c.Call("checkVat", params)
 	if err == nil {
 		t.Errorf("invalid WSDL")
 	}
@@ -100,13 +156,12 @@ func TestClient_Call(t *testing.T) {
 func TestClient_doRequest(t *testing.T) {
 	c := &Client{}
 
-	_, err := c.doRequest()
+	_, err := c.doRequest("")
 	if err == nil {
 		t.Errorf("body is empty")
 	}
 
-	c.WSDL = "://teste."
-	_, err = c.doRequest()
+	_, err = c.doRequest("://teste.")
 	if err == nil {
 		t.Errorf("invalid WSDL")
 	}

@@ -19,7 +19,7 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 
 	startEnvelope()
 	if len(c.HeaderParams) > 0 {
-		startHeader()
+		startHeader(c.HeaderName, c.Definitions.Types[0].XsdSchema[0].TargetNamespace)
 		for k, v := range c.HeaderParams {
 			t := xml.StartElement{
 				Name: xml.Name{
@@ -31,10 +31,10 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 			tokens = append(tokens, t, xml.CharData(v), xml.EndElement{Name: t.Name})
 		}
 
-		endHeader()
+		endHeader(c.HeaderName)
 	}
 
-	err := startBody(c.Method, c.Definitions.TargetNamespace)
+	err := startBody(c.Method, c.Definitions.Types[0].XsdSchema[0].TargetNamespace)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func endEnvelope() {
 	tokens = append(tokens, e)
 }
 
-func startHeader() {
+func startHeader(m, n string) {
 	h := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
@@ -98,10 +98,27 @@ func startHeader() {
 		},
 	}
 
-	tokens = append(tokens, h)
+	if m == "" || n == "" {
+		tokens = append(tokens, h)
+		return
+	}
+
+	r := xml.StartElement{
+		Name: xml.Name{
+			Space: "",
+			Local: m,
+		},
+		Attr: []xml.Attr{
+			{Name: xml.Name{Space: "", Local: "xmlns"}, Value: n},
+		},
+	}
+
+	tokens = append(tokens, h, r)
+
+	return
 }
 
-func endHeader() {
+func endHeader(m string) {
 	h := xml.EndElement{
 		Name: xml.Name{
 			Space: "",
@@ -109,7 +126,19 @@ func endHeader() {
 		},
 	}
 
-	tokens = append(tokens, h)
+	if m == "" {
+		tokens = append(tokens, h)
+		return
+	}
+
+	r := xml.EndElement{
+		Name: xml.Name{
+			Space: "",
+			Local: m,
+		},
+	}
+
+	tokens = append(tokens, r, h)
 }
 
 // startToken initiate body of the envelope

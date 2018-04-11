@@ -41,12 +41,17 @@ type Client struct {
 	URL          string
 	Method       string
 	Params       Params
+	HeaderName   string
 	HeaderParams Params
 	Definitions  *wsdlDefinitions
 	Body         []byte
 	Header       []byte
 
 	payload []byte
+}
+
+func (c *Client) GetLastRequest() []byte {
+	return c.payload
 }
 
 // Call call's the method m with Params p
@@ -59,7 +64,7 @@ func (c *Client) Call(m string, p Params) (err error) {
 		return err
 	}
 
-	b, err := c.doRequest()
+	b, err := c.doRequest(c.Definitions.Services[0].Ports[0].SoapAddresses[0].Location)
 	if err != nil {
 		return err
 	}
@@ -90,8 +95,8 @@ func (c *Client) Unmarshal(v interface{}) error {
 
 // doRequest makes new request to the server using the c.Method, c.URL and the body.
 // body is enveloped in Call method
-func (c *Client) doRequest() ([]byte, error) {
-	req, err := http.NewRequest("POST", c.WSDL, bytes.NewBuffer(c.payload))
+func (c *Client) doRequest(url string) ([]byte, error) {
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(c.payload))
 	if err != nil {
 		return nil, err
 	}
