@@ -11,7 +11,9 @@ import (
 )
 
 // Params type is used to set the params in soap request
-type Params map[string]string
+type Params map[string]interface{}
+// HeaderParams holds params specific to the header
+type HeaderParams map[string]string
 
 // SoapClient return new *Client to handle the requests with the WSDL
 func SoapClient(wsdl string) (*Client, error) {
@@ -42,14 +44,17 @@ type Client struct {
 	Method       string
 	Params       Params
 	HeaderName   string
-	HeaderParams Params
+	HeaderParams HeaderParams
 	Definitions  *wsdlDefinitions
 	Body         []byte
 	Header       []byte
+	Username	 string
+	Password     string
 
 	payload []byte
 }
 
+// GetLastRequest returns the last request
 func (c *Client) GetLastRequest() []byte {
 	return c.payload
 }
@@ -60,11 +65,13 @@ func (c *Client) Call(m string, p Params) (err error) {
 	c.Params = p
 
 	c.payload, err = xml.MarshalIndent(c, "", "")
+	fmt.Println("Payload: "+ string(c.payload))
 	if err != nil {
 		return err
 	}
 
 	b, err := c.doRequest(c.Definitions.Services[0].Ports[0].SoapAddresses[0].Location)
+	// fmt.Println("Request: "+ string(b))
 	if err != nil {
 		return err
 	}
@@ -74,6 +81,9 @@ func (c *Client) Call(m string, p Params) (err error) {
 
 	c.Body = soap.Body.Contents
 	c.Header = soap.Header.Contents
+
+	fmt.Println("Body: "+ string(c.Body))
+	// fmt.Println("Header: "+ string(c.Header))
 
 	return err
 }
@@ -99,6 +109,10 @@ func (c *Client) doRequest(url string) ([]byte, error) {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(c.payload))
 	if err != nil {
 		return nil, err
+	}
+
+	if c.Username != "" && c.Password != "" {
+		req.SetBasicAuth(c.Username, c.Password)
 	}
 
 	client := &http.Client{}
