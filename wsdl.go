@@ -2,8 +2,8 @@ package gosoap
 
 import (
 	"encoding/xml"
-	"io/ioutil"
 	"net/http"
+	"golang.org/x/net/html/charset"
 )
 
 type wsdlDefinitions struct {
@@ -152,7 +152,7 @@ type xsdMaxInclusive struct {
 	Value string `xml:"value,attr"`
 }
 
-// getwsdlDefinitions sent request to the wsdl url and set definitions on struct
+// getWsdlDefinitions sent request to the wsdl url and set definitions on struct
 func getWsdlDefinitions(u string) (wsdl *wsdlDefinitions, err error) {
 	r, err := http.Get(u)
 	if err != nil {
@@ -160,8 +160,9 @@ func getWsdlDefinitions(u string) (wsdl *wsdlDefinitions, err error) {
 	}
 	defer r.Body.Close()
 
-	b, _ := ioutil.ReadAll(r.Body)
-	err = xml.Unmarshal(b, &wsdl)
+	decoder := xml.NewDecoder(r.Body)
+	decoder.CharsetReader = charset.NewReaderLabel
+	err = decoder.Decode(&wsdl)
 
 	return wsdl, err
 }

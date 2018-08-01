@@ -153,6 +153,18 @@ func TestClient_Call(t *testing.T) {
 	}
 }
 
+func TestClient_Call_NonUtf8(t *testing.T) {
+	soap, err := SoapClient("https://www.demo.ilias.de/webservice/soap/server.php?wsdl")
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	soap.Call("login", Params{"client": "demo", "username": "robert", "password": "iliasdemo"})
+	if err != nil {
+		t.Errorf("error in soap call: %s", err)
+	}
+}
+
 func TestClient_doRequest(t *testing.T) {
 	c := &Client{}
 
