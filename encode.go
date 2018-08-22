@@ -56,25 +56,31 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	return e.Flush()
 }
 
-func recursiveEncode(hm map[string]interface{}) {
-	for k, v := range hm {
-		t := xml.StartElement{
-			Name: xml.Name{
-				Space: "",
-				Local: k,
-			},
-		}
+func recursiveEncode(hm interface{}) {
+	v := reflect.ValueOf(hm)
 
-		tpe := reflect.TypeOf(v)
+	switch v.Kind() {
+	case reflect.Map:
+		for _, key := range v.MapKeys() {
+			t := xml.StartElement{
+				Name: xml.Name{
+					Space: "",
+					Local: key.String(),
+				},
+			}
 
-		if tpe.String() == "string" {
-			content := xml.CharData(v.(string))
-			tokens = append(tokens, t, content, xml.EndElement{Name: t.Name})
-		} else {
 			tokens = append(tokens, t)
-			recursiveEncode(v.(map[string]interface{}))
+			recursiveEncode(v.MapIndex(key).Interface())
 			tokens = append(tokens, xml.EndElement{Name: t.Name})
 		}
+	case reflect.Slice:
+		for i := 0; i < v.Len(); i++ {
+			fmt.Println(v.Index(i))
+			recursiveEncode(v.Index(i).Interface())
+		}
+	case reflect.String:
+		content := xml.CharData(v.String())
+		tokens = append(tokens, content)
 	}
 }
 

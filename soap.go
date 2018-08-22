@@ -65,7 +65,7 @@ func (c *Client) Call(m string, p Params) (err error) {
 	c.Method = m
 	c.Params = p
 
-	c.payload, err = xml.MarshalIndent(c, "", "")
+	c.payload, err = xml.MarshalIndent(c, "", "    ")
 	if err != nil {
 		return err
 	}
