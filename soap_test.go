@@ -154,7 +154,7 @@ func TestClient_Call(t *testing.T) {
 }
 
 func TestClient_Call_NonUtf8(t *testing.T) {
-	soap, err := SoapClient("https://www.demo.ilias.de/webservice/soap/server.php?wsdl")
+	soap, err := SoapClient("https://demo.ilias.de/webservice/soap/server.php?wsdl")
 	if err != nil {
 		t.Errorf("error not expected: %s", err)
 	}
