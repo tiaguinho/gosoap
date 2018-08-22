@@ -3,6 +3,7 @@ package gosoap
 import (
 	"encoding/xml"
 	"fmt"
+	"reflect"
 )
 
 var tokens []xml.Token
@@ -39,16 +40,8 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 		return err
 	}
 
-	for k, v := range c.Params {
-		t := xml.StartElement{
-			Name: xml.Name{
-				Space: "",
-				Local: k,
-			},
-		}
+	recursiveEncode(c.Params)
 
-		tokens = append(tokens, t, xml.CharData(v), xml.EndElement{Name: t.Name})
-	}
 	//end envelope
 	endBody(c.Method)
 	endEnvelope()
@@ -61,6 +54,28 @@ func (c Client) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	}
 
 	return e.Flush()
+}
+
+func recursiveEncode(hm map[string]interface{}) {
+	for k, v := range hm {
+		t := xml.StartElement{
+			Name: xml.Name{
+				Space: "",
+				Local: k,
+			},
+		}
+
+		tpe := reflect.TypeOf(v)
+
+		if tpe.String() == "string" {
+			content := xml.CharData(v.(string))
+			tokens = append(tokens, t, content, xml.EndElement{Name: t.Name})
+		} else {
+			tokens = append(tokens, t)
+			recursiveEncode(v.(map[string]interface{}))
+			tokens = append(tokens, xml.EndElement{Name: t.Name})
+		}
+	}
 }
 
 func startEnvelope() {
