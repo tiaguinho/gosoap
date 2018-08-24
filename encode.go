@@ -75,7 +75,6 @@ func recursiveEncode(hm interface{}) {
 		}
 	case reflect.Slice:
 		for i := 0; i < v.Len(); i++ {
-			fmt.Println(v.Index(i))
 			recursiveEncode(v.Index(i).Interface())
 		}
 	case reflect.String:
