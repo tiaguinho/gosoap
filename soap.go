@@ -40,6 +40,7 @@ func SoapClient(wsdl string) (*Client, error) {
 // Client struct hold all the informations about WSDL,
 // request and response of the server
 type Client struct {
+	HttpClient 	 *http.Client
 	WSDL         string
 	URL          string
 	Method       string
@@ -111,7 +112,9 @@ func (c *Client) doRequest(url string) ([]byte, error) {
 		req.SetBasicAuth(c.Username, c.Password)
 	}
 
-	client := &http.Client{}
+	if c.HttpClient == nil {
+		c.HttpClient = &http.Client{}
+	}
 
 	req.ContentLength = int64(len(c.payload))
 
@@ -119,7 +122,7 @@ func (c *Client) doRequest(url string) ([]byte, error) {
 	req.Header.Add("Accept", "text/xml")
 	req.Header.Add("SOAPAction", fmt.Sprintf("%s/%s", c.URL, c.Method))
 
-	resp, err := client.Do(req)
+	resp, err := c.HttpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
