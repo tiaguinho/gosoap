@@ -44,6 +44,7 @@ type Client struct {
 	WSDL         string
 	URL          string
 	Method       string
+	SoapAction   string
 	Params       Params
 	HeaderName   string
 	HeaderParams HeaderParams
@@ -65,6 +66,10 @@ func (c *Client) GetLastRequest() []byte {
 func (c *Client) Call(m string, p Params) (err error) {
 	c.Method = m
 	c.Params = p
+	c.SoapAction = c.Definitions.GetSoapActionFromWsdlOperation(c.Method)
+	if c.SoapAction == "" {
+		c.SoapAction = fmt.Sprintf("%s/%s", c.URL, c.Method)
+	}
 
 	c.payload, err = xml.MarshalIndent(c, "", "    ")
 	if err != nil {
@@ -120,7 +125,7 @@ func (c *Client) doRequest(url string) ([]byte, error) {
 
 	req.Header.Add("Content-Type", "text/xml;charset=UTF-8")
 	req.Header.Add("Accept", "text/xml")
-	req.Header.Add("SOAPAction", fmt.Sprintf("%s/%s", c.URL, c.Method))
+	req.Header.Add("SOAPAction", c.SoapAction)
 
 	resp, err := c.HttpClient.Do(req)
 	if err != nil {
