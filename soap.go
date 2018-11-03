@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -64,6 +65,14 @@ func (c *Client) GetLastRequest() []byte {
 
 // Call call's the method m with Params p
 func (c *Client) Call(m string, p Params) (err error) {
+	if c.Definitions == nil {
+		return errors.New("WSDL definitions not found.")
+	}
+
+	if c.Definitions.Services == nil {
+		return errors.New("No Services found in WSDL definitions.")
+	}
+
 	c.Method = m
 	c.Params = p
 	c.SoapAction = c.Definitions.GetSoapActionFromWsdlOperation(c.Method)
