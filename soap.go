@@ -3,6 +3,7 @@ package gosoap
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -40,7 +41,7 @@ func SoapClient(wsdl string) (*Client, error) {
 // Client struct hold all the informations about WSDL,
 // request and response of the server
 type Client struct {
-	HttpClient 	 *http.Client
+	HttpClient   *http.Client
 	WSDL         string
 	URL          string
 	Method       string
@@ -64,6 +65,14 @@ func (c *Client) GetLastRequest() []byte {
 
 // Call call's the method m with Params p
 func (c *Client) Call(m string, p Params) (err error) {
+	if c.Definitions == nil {
+		return errors.New("WSDL definitions not found")
+	}
+
+	if c.Definitions.Services == nil {
+		return errors.New("No Services found in WSDL definitions")
+	}
+
 	c.Method = m
 	c.Params = p
 	c.SoapAction = c.Definitions.GetSoapActionFromWsdlOperation(c.Method)
