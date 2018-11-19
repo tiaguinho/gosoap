@@ -38,7 +38,7 @@ type CheckVatResponse struct {
 	VatNumber   string `xml:"vatNumber"`
 	RequestDate string `xml:"requestDate"`
 	Valid       string `xml:"valid"`
-	name        string `xml:"name"`
+	Name        string `xml:"name"`
 	Address     string `xml:"address"`
 }
 
