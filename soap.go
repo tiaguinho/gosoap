@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	
+	"golang.org/x/net/html/charset"
 )
 
 // HeaderParams holds params specific to the header
