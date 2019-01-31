@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	
+	"golang.org/x/net/html/charset"
 )
 
 // HeaderParams holds params specific to the header
@@ -91,7 +93,14 @@ func (c *Client) Call(m string, p Params) (err error) {
 	}
 
 	var soap SoapEnvelope
-	err = xml.Unmarshal(b, &soap)
+	// err = xml.Unmarshal(b, &soap)
+	// error: xml: encoding "ISO-8859-1" declared but Decoder.CharsetReader is nil
+	// https://stackoverflow.com/questions/6002619/unmarshal-an-iso-8859-1-xml-input-in-go
+	// https://github.com/golang/go/issues/8937
+
+        decoder := xml.NewDecoder( bytes.NewReader(b) )
+        decoder.CharsetReader = charset.NewReaderLabel
+        err = decoder.Decode(&soap)
 
 	c.Body = soap.Body.Contents
 	c.Header = soap.Header.Contents
