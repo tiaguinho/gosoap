@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"golang.org/x/net/html/charset"
 )
@@ -26,16 +27,9 @@ func SoapClient(wsdl string) (*Client, error) {
 		return nil, err
 	}
 
-	d, err := getWsdlDefinitions(wsdl)
-	if err != nil {
-		return nil, err
-	}
-
 	c := &Client{
-		WSDL:        wsdl,
-		URL:         strings.TrimSuffix(d.TargetNamespace, "/"),
-		Definitions: d,
-		HttpClient:  &http.Client{},
+		WSDL:       wsdl,
+		HttpClient: &http.Client{},
 	}
 
 	return c, nil
@@ -44,6 +38,7 @@ func SoapClient(wsdl string) (*Client, error) {
 // Client struct hold all the informations about WSDL,
 // request and response of the server
 type Client struct {
+	mutex        sync.Mutex
 	HttpClient   *http.Client
 	WSDL         string
 	URL          string
@@ -71,7 +66,14 @@ func (c *Client) CallByStruct(s RequestStruct) (res *Response, err error) {
 
 func (c *Client) Do(req *Request) (res *Response, err error) {
 	if c.Definitions == nil {
-		return nil, errors.New("WSDL definitions not found")
+		c.mutex.Lock()
+		c.Definitions, err = getWsdlDefinitions(c.WSDL)
+		if err != nil {
+			c.mutex.Unlock()
+			return nil, err
+		}
+		c.URL = strings.TrimSuffix(c.Definitions.TargetNamespace, "/")
+		c.mutex.Unlock()
 	}
 
 	if c.Definitions.Services == nil {
