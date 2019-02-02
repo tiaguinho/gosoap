@@ -8,7 +8,6 @@ import (
 
 // MarshalXML envelope the body and encode to xml
 func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
-
 	tokens := &tokenData{}
 
 	//start envelope
