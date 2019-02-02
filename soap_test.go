@@ -1,6 +1,7 @@
 package gosoap
 
 import (
+	"net/http"
 	"testing"
 )
 
@@ -31,6 +32,18 @@ func TestSoapClient(t *testing.T) {
 			t.Errorf("URL: %s - error: %s", sct.URL, err)
 		}
 	}
+}
+
+type CheckVatRequest struct {
+	CountryCode string
+	VatNumber   string
+}
+
+func (r CheckVatRequest) SoapBuildRequest() *Request {
+	return NewRequest("checkVat", Params{
+		"countryCode": r.CountryCode,
+		"vatNumber":   r.VatNumber,
+	})
 }
 
 type CheckVatResponse struct {
@@ -69,24 +82,25 @@ func TestClient_Call(t *testing.T) {
 		t.Errorf("error not expected: %s", err)
 	}
 
+	var res *Response
+
 	params["vatNumber"] = "6388047V"
 	params["countryCode"] = "IE"
-	err = soap.Call("", params)
+	res, err = soap.Call("", params)
 	if err == nil {
 		t.Errorf("method is empty")
 	}
 
-	err = soap.Unmarshal(&rv)
-	if err == nil {
+	if res != nil {
 		t.Errorf("body is empty")
 	}
 
-	err = soap.Call("checkVat", params)
+	res, err = soap.Call("checkVat", params)
 	if err != nil {
 		t.Errorf("error in soap call: %s", err)
 	}
 
-	soap.Unmarshal(&rv)
+	res.Unmarshal(&rv)
 	if rv.CountryCode != "IE" {
 		t.Errorf("error: %+v", rv)
 	}
@@ -96,12 +110,12 @@ func TestClient_Call(t *testing.T) {
 		t.Errorf("error not expected: %s", err)
 	}
 
-	err = soap.Call("CapitalCity", Params{"sCountryISOCode": "GB"})
+	res, err = soap.Call("CapitalCity", Params{"sCountryISOCode": "GB"})
 	if err != nil {
 		t.Errorf("error in soap call: %s", err)
 	}
 
-	soap.Unmarshal(&rc)
+	res.Unmarshal(&rc)
 
 	if rc.CapitalCityResult != "London" {
 		t.Errorf("error: %+v", rc)
@@ -112,12 +126,12 @@ func TestClient_Call(t *testing.T) {
 		t.Errorf("error not expected: %s", err)
 	}
 
-	err = soap.Call("NumberToWords", Params{"ubiNum": "23"})
+	res, err = soap.Call("NumberToWords", Params{"ubiNum": "23"})
 	if err != nil {
 		t.Errorf("error in soap call: %s", err)
 	}
 
-	soap.Unmarshal(&rn)
+	res.Unmarshal(&rn)
 
 	if rn.NumberToWordsResult != "twenty three " {
 		t.Errorf("error: %+v", rn)
@@ -128,28 +142,50 @@ func TestClient_Call(t *testing.T) {
 		t.Errorf("error not expected: %s", err)
 	}
 
-	err = soap.Call("Whois", Params{"DomainName": "google.com"})
+	res, err = soap.Call("Whois", Params{"DomainName": "google.com"})
 	if err != nil {
 		t.Errorf("error in soap call: %s", err)
 	}
 
-	soap.Unmarshal(&rw)
+	res.Unmarshal(&rw)
 
 	if rw.WhoisResult != "0" {
 		t.Errorf("error: %+v", rw)
 	}
 
 	c := &Client{}
-	err = c.Call("", Params{})
+	res, err = c.Call("", Params{})
 	if err == nil {
 		t.Errorf("error expected but nothing got.")
 	}
 
 	c.WSDL = "://test."
 
-	err = c.Call("checkVat", params)
+	res, err = c.Call("checkVat", params)
 	if err == nil {
 		t.Errorf("invalid WSDL")
+	}
+}
+
+func TestClient_CallByStruct(t *testing.T) {
+	soap, err := SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl")
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	var res *Response
+
+	res, err = soap.CallByStruct(CheckVatRequest{
+		CountryCode: "IE",
+		VatNumber:   "6388047V",
+	})
+	if err != nil {
+		t.Errorf("error in soap call: %s", err)
+	}
+
+	res.Unmarshal(&rv)
+	if rv.CountryCode != "IE" {
+		t.Errorf("error: %+v", rv)
 	}
 }
 
@@ -159,14 +195,18 @@ func TestClient_Call_NonUtf8(t *testing.T) {
 		t.Errorf("error not expected: %s", err)
 	}
 
-	soap.Call("login", Params{"client": "demo", "username": "robert", "password": "iliasdemo"})
+	_, err = soap.Call("login", Params{"client": "demo", "username": "robert", "password": "iliasdemo"})
 	if err != nil {
 		t.Errorf("error in soap call: %s", err)
 	}
 }
 
-func TestClient_doRequest(t *testing.T) {
-	c := &Client{}
+func TestProcess_doRequest(t *testing.T) {
+	c := &process{
+		Client: &Client{
+			HttpClient: &http.Client{},
+		},
+	}
 
 	_, err := c.doRequest("")
 	if err == nil {

@@ -23,7 +23,7 @@ func TestClient_MarshalXML(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err = soap.Call("checkVat", test.Params)
+		_, err = soap.Call("checkVat", test.Params)
 		if err == nil {
 			t.Errorf(test.Err)
 		}

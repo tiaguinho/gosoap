@@ -43,12 +43,12 @@ func main() {
 		"IPAddress": "8.8.8.8",
 	}
 
-	err = soap.Call("GetGeoIP", params)
+	res, err := soap.Call("GetGeoIP", params)
 	if err != nil {
 		fmt.Errorf("error in soap call: %s", err)
 	}
 
-	soap.Unmarshal(&r)
+	res.Unmarshal(&r)
 	if r.GetGeoIPResult.CountryCode != "USA" {
 		fmt.Errorf("error: %+v", r)
 	}
