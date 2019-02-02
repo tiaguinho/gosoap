@@ -44,7 +44,7 @@ func main() {
 		fmt.Errorf("error in soap call: %s", err)
 	}
 
-    r := GetGeoIPResponse{}
+	r := GetGeoIPResponse{}
 
 	res.Unmarshal(&r)
 	if r.GetGeoIPResult.CountryCode != "USA" {
