@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/net/html/charset"
 )
@@ -20,7 +21,7 @@ type HeaderParams map[string]string
 // Params type is used to set the params in soap request
 type Params map[string]interface{}
 
-// SoapClient return new *Client to handle the requests with the WSDL
+// SoapClient return new *Client to handle the requests with the wsdl
 func SoapClient(wsdl string) (*Client, error) {
 	_, err := url.Parse(wsdl)
 	if err != nil {
@@ -28,25 +29,30 @@ func SoapClient(wsdl string) (*Client, error) {
 	}
 
 	c := &Client{
-		WSDL:       wsdl,
+		wsdl:       wsdl,
 		HttpClient: &http.Client{},
 	}
 
 	return c, nil
 }
 
-// Client struct hold all the informations about WSDL,
+// Client struct hold all the informations about wsdl,
 // request and response of the server
 type Client struct {
-	once         sync.Once
-	HttpClient   *http.Client
-	WSDL         string
-	URL          string
-	HeaderName   string
-	HeaderParams HeaderParams
-	Definitions  *wsdlDefinitions
-	Username     string
-	Password     string
+	HttpClient              *http.Client
+	URL                     string
+	HeaderName              string
+	HeaderParams            HeaderParams
+	Definitions             *wsdlDefinitions
+	RefreshDefinitionsAfter time.Duration
+	Username                string
+	Password                string
+
+	once                 sync.Once
+	definitionsErr       error
+	onRequest            sync.WaitGroup
+	onDefinitionsRefresh sync.WaitGroup
+	wsdl                 string
 }
 
 // Call call's the method m with Params p
@@ -64,32 +70,57 @@ func (c *Client) CallByStruct(s RequestStruct) (res *Response, err error) {
 	return c.Do(req)
 }
 
-func (c *Client) initWsdl() (err error) {
-	if c.Definitions == nil {
-		c.Definitions, err = getWsdlDefinitions(c.WSDL)
-		if err != nil {
-			return err
-		}
+func (c *Client) waitAndRefreshDefinitions(d time.Duration) {
+	for {
+		time.Sleep(d)
+		c.onRequest.Wait()
+		c.onDefinitionsRefresh.Add(1)
+		c.initWsdl()
+		c.onDefinitionsRefresh.Done()
+	}
+}
+
+func (c *Client) initWsdl() {
+	c.Definitions, c.definitionsErr = getWsdlDefinitions(c.wsdl)
+	if c.definitionsErr == nil {
 		c.URL = strings.TrimSuffix(c.Definitions.TargetNamespace, "/")
 	}
-	return nil
+}
+
+func (c *Client) SetWSDL(wsdl string) {
+	c.onRequest.Wait()
+	c.onDefinitionsRefresh.Wait()
+	c.onRequest.Add(1)
+	c.onDefinitionsRefresh.Add(1)
+	defer c.onRequest.Done()
+	defer c.onDefinitionsRefresh.Done()
+	c.wsdl = wsdl
+	c.initWsdl()
 }
 
 func (c *Client) Do(req *Request) (res *Response, err error) {
+	c.onDefinitionsRefresh.Wait()
+	c.onRequest.Add(1)
+	defer c.onRequest.Done()
+
 	c.once.Do(func() {
-		err = c.initWsdl()
+		c.initWsdl()
+		// 15 minute to prevent abuse.
+		if c.RefreshDefinitionsAfter >= 15*time.Minute {
+			go c.waitAndRefreshDefinitions(c.RefreshDefinitionsAfter)
+		}
 	})
 
-	if err != nil {
-		return nil, err
+	if c.definitionsErr != nil {
+		return nil, c.definitionsErr
 	}
 
 	if c.Definitions == nil {
-		return nil, errors.New("WSDL definitions not found")
+		return nil, errors.New("wsdl definitions not found")
 	}
 
 	if c.Definitions.Services == nil {
-		return nil, errors.New("No Services found in WSDL definitions")
+		return nil, errors.New("No Services found in wsdl definitions")
 	}
 
 	p := &process{
@@ -109,7 +140,7 @@ func (c *Client) Do(req *Request) (res *Response, err error) {
 
 	b, err := p.doRequest(c.Definitions.Services[0].Ports[0].SoapAddresses[0].Location)
 	if err != nil {
-		return nil, err
+		return nil, ErrorWithPayload{err, p.Payload}
 	}
 
 	var soap SoapEnvelope
@@ -127,8 +158,11 @@ func (c *Client) Do(req *Request) (res *Response, err error) {
 		Header:  soap.Header.Contents,
 		Payload: p.Payload,
 	}
+	if err != nil {
+		return res, ErrorWithPayload{err, p.Payload}
+	}
 
-	return res, err
+	return res, nil
 }
 
 type process struct {
@@ -163,6 +197,18 @@ func (p *process) doRequest(url string) ([]byte, error) {
 	defer resp.Body.Close()
 
 	return ioutil.ReadAll(resp.Body)
+}
+
+type ErrorWithPayload struct {
+	error
+	Payload []byte
+}
+
+func GetPayloadFromError(err error) []byte {
+	if err, ok := err.(ErrorWithPayload); ok {
+		return err.Payload
+	}
+	return nil
 }
 
 // SoapEnvelope struct
