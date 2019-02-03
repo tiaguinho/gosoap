@@ -98,6 +98,7 @@ func (c *Client) SetWSDL(wsdl string) {
 	c.initWsdl()
 }
 
+// Process Soap Request
 func (c *Client) Do(req *Request) (res *Response, err error) {
 	c.onDefinitionsRefresh.Wait()
 	c.onRequest.Add(1)

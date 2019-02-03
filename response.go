@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// Soap Response
 type Response struct {
 	Body    []byte
 	Header  []byte

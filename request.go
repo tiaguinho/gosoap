@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// Soap Request
 type Request struct {
 	Method string
 	Params Params
