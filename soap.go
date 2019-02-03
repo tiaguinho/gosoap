@@ -39,11 +39,12 @@ func SoapClient(wsdl string) (*Client, error) {
 // Client struct hold all the informations about wsdl,
 // request and response of the server
 type Client struct {
-	HttpClient              *http.Client
-	URL                     string
-	HeaderName              string
-	HeaderParams            HeaderParams
-	Definitions             *wsdlDefinitions
+	HttpClient   *http.Client
+	URL          string
+	HeaderName   string
+	HeaderParams HeaderParams
+	Definitions  *wsdlDefinitions
+	// Must be set before first request otherwise has no effect, minimum is 15 minutes.
 	RefreshDefinitionsAfter time.Duration
 	Username                string
 	Password                string
