@@ -192,13 +192,20 @@ func (p *process) doRequest(url string) ([]byte, error) {
 	req.Header.Add("Accept", "text/xml")
 	req.Header.Add("SOAPAction", p.SoapAction)
 
-	resp, err := p.Client.HttpClient.Do(req)
+	resp, err := p.httpClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	return ioutil.ReadAll(resp.Body)
+}
+
+func (p *process) httpClient() *http.Client {
+	if p.Client.HttpClient != nil {
+		return p.Client.HttpClient
+	}
+	return http.DefaultClient
 }
 
 type ErrorWithPayload struct {
