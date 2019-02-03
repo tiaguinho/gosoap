@@ -105,7 +105,7 @@ func TestClient_Call(t *testing.T) {
 		t.Errorf("error: %+v", rv)
 	}
 
-	soap, err = SoapClient("http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?wsdl")
+	soap, err = SoapClient("http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL")
 	if err != nil {
 		t.Errorf("error not expected: %s", err)
 	}
@@ -121,7 +121,7 @@ func TestClient_Call(t *testing.T) {
 		t.Errorf("error: %+v", rc)
 	}
 
-	soap, err = SoapClient("http://www.dataaccess.com/webservicesserver/numberconversion.wso?wsdl")
+	soap, err = SoapClient("http://www.dataaccess.com/webservicesserver/numberconversion.wso?WSDL")
 	if err != nil {
 		t.Errorf("error not expected: %s", err)
 	}
@@ -137,7 +137,7 @@ func TestClient_Call(t *testing.T) {
 		t.Errorf("error: %+v", rn)
 	}
 
-	soap, err = SoapClient("https://domains.livedns.co.il/API/DomainsAPI.asmx?wsdl")
+	soap, err = SoapClient("https://domains.livedns.co.il/API/DomainsAPI.asmx?WSDL")
 	if err != nil {
 		t.Errorf("error not expected: %s", err)
 	}
@@ -163,7 +163,7 @@ func TestClient_Call(t *testing.T) {
 
 	res, err = c.Call("checkVat", params)
 	if err == nil {
-		t.Errorf("invalid wsdl")
+		t.Errorf("invalid WSDL")
 	}
 }
 
@@ -215,6 +215,6 @@ func TestProcess_doRequest(t *testing.T) {
 
 	_, err = c.doRequest("://teste.")
 	if err == nil {
-		t.Errorf("invalid wsdl")
+		t.Errorf("invalid WSDL")
 	}
 }
