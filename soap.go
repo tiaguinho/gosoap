@@ -21,7 +21,7 @@ type HeaderParams map[string]string
 // Params type is used to set the params in soap request
 type Params map[string]interface{}
 
-// SoapClient return new *Client to handle the requests with the wsdl
+// SoapClient return new *Client to handle the requests with the WSDL
 func SoapClient(wsdl string) (*Client, error) {
 	_, err := url.Parse(wsdl)
 	if err != nil {
@@ -36,7 +36,7 @@ func SoapClient(wsdl string) (*Client, error) {
 	return c, nil
 }
 
-// Client struct hold all the informations about wsdl,
+// Client struct hold all the informations about WSDL,
 // request and response of the server
 type Client struct {
 	HttpClient   *http.Client
