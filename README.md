@@ -29,10 +29,6 @@ type GetGeoIPResult struct {
 	CountryCode       string
 }
 
-var (
-	r GetGeoIPResponse
-)
-
 func main() {
 	soap, err := gosoap.SoapClient("http://www.webservicex.net/geoipservice.asmx?WSDL")
 	if err != nil {
@@ -43,12 +39,14 @@ func main() {
 		"IPAddress": "8.8.8.8",
 	}
 
-	err = soap.Call("GetGeoIP", params)
+	res, err := soap.Call("GetGeoIP", params)
 	if err != nil {
 		fmt.Errorf("error in soap call: %s", err)
 	}
 
-	soap.Unmarshal(&r)
+	r := GetGeoIPResponse{}
+
+	res.Unmarshal(&r)
 	if r.GetGeoIPResult.CountryCode != "USA" {
 		fmt.Errorf("error: %+v", r)
 	}
