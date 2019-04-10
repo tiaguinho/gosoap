@@ -161,7 +161,7 @@ func getWsdlBody(u string) (reader io.ReadCloser, err error) {
 		return nil, err
 	}
 	if parse.Scheme == "file" {
-		outFile, err := os.OpenFile(parse.Path, os.O_RDONLY, 0444)
+		outFile, err := os.Open(parse.Path)
 		if err != nil {
 			return nil, err
 		}
