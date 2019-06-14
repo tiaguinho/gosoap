@@ -45,12 +45,12 @@ func main() {
 		"sIp": "8.8.8.8",
 	}
 
-	err = soap.Call("GetIpLocation", params)
+	res, err = soap.Call("GetIpLocation", params)
 	if err != nil {
 		log.Fatalf("Call error: %s", err)
 	}
 
-	soap.Unmarshal(&r)
+	res.Unmarshal(&r)
 
 	// GetIpLocationResult will be a string. We need to parse it to XML
 	result := GetIPLocationResult{}
