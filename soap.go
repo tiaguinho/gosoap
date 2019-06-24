@@ -16,7 +16,7 @@ import (
 )
 
 // HeaderParams holds params specific to the header
-type HeaderParams map[string]string
+type HeaderParams map[string]interface{}
 
 // Params type is used to set the params in soap request
 type Params map[string]interface{}

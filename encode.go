@@ -18,16 +18,8 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	tokens.startEnvelope()
 	if len(c.Client.HeaderParams) > 0 {
 		tokens.startHeader(c.Client.HeaderName, c.Client.Definitions.Types[0].XsdSchema[0].TargetNamespace)
-		for k, v := range c.Client.HeaderParams {
-			t := xml.StartElement{
-				Name: xml.Name{
-					Space: "",
-					Local: k,
-				},
-			}
 
-			tokens.data = append(tokens.data, t, xml.CharData(v), xml.EndElement{Name: t.Name})
-		}
+		tokens.recursiveEncode(c.Client.HeaderParams)
 
 		tokens.endHeader(c.Client.HeaderName)
 	}
