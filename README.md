@@ -45,7 +45,7 @@ func main() {
 		"sIp": "8.8.8.8",
 	}
 
-	res, err = soap.Call("GetIpLocation", params)
+	res, err := soap.Call("GetIpLocation", params)
 	if err != nil {
 		log.Fatalf("Call error: %s", err)
 	}
