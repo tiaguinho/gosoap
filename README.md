@@ -42,7 +42,7 @@ func main() {
 	}
 
 	params := gosoap.Params{
-		"sIp": "8.8.8.8",
+		"sIp[type=s:string,anotherAttribute=anotherValue]": "8.8.8.8",
 	}
 
 	res, err := soap.Call("GetIpLocation", params)

@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"reflect"
+	"regexp"
 )
 
 // MarshalXML envelope the body and encode to xml
@@ -52,19 +53,42 @@ type tokenData struct {
 func (tokens *tokenData) recursiveEncode(hm interface{}) {
 	v := reflect.ValueOf(hm)
 
+	regexpAttrBox := regexp.MustCompile(`([^\[]+)\[(.*)\]`)
+	regexpAttrs := regexp.MustCompile(`,?([^=]+)=([^,]+)`)
+
 	switch v.Kind() {
 	case reflect.Map:
 		for _, key := range v.MapKeys() {
-			t := xml.StartElement{
-				Name: xml.Name{
-					Space: "",
-					Local: key.String(),
-				},
-			}
+			if regexpAttrBox.MatchString(key.String()) {
+				rs := regexpAttrBox.FindStringSubmatch(key.String())
 
-			tokens.data = append(tokens.data, t)
-			tokens.recursiveEncode(v.MapIndex(key).Interface())
-			tokens.data = append(tokens.data, xml.EndElement{Name: t.Name})
+				var attrs []xml.Attr
+				matches := regexpAttrs.FindAllStringSubmatch(rs[2], -1)
+				for _, match := range matches {
+					attrs = append(attrs, xml.Attr{Name: xml.Name{Local: match[1]}, Value: match[2]})
+				}
+
+				t := xml.StartElement{
+					Name: xml.Name{
+						Space: "",
+						Local: rs[1],
+					},
+					Attr: attrs,
+				}
+				tokens.data = append(tokens.data, t)
+				tokens.recursiveEncode(v.MapIndex(key).Interface())
+				tokens.data = append(tokens.data, xml.EndElement{Name: t.Name})
+			} else {
+				t := xml.StartElement{
+					Name: xml.Name{
+						Space: "",
+						Local: key.String(),
+					},
+				}
+				tokens.data = append(tokens.data, t)
+				tokens.recursiveEncode(v.MapIndex(key).Interface())
+				tokens.data = append(tokens.data, xml.EndElement{Name: t.Name})
+			}
 		}
 	case reflect.Slice:
 		for i := 0; i < v.Len(); i++ {
