@@ -77,7 +77,9 @@ var (
 )
 
 func TestClient_Call(t *testing.T) {
-	soap, err := SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl")
+	soap, err := SoapClientWithConfig("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl",
+		&Config{Dump: true},
+	)
 	if err != nil {
 		t.Errorf("error not expected: %s", err)
 	}

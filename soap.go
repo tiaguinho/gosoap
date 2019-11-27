@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strings"
 	"sync"
@@ -21,8 +22,18 @@ type HeaderParams map[string]interface{}
 // Params type is used to set the params in soap request
 type Params map[string]interface{}
 
+// Config config the Client
+type Config struct {
+	Dump bool
+}
+
 // SoapClient return new *Client to handle the requests with the WSDL
 func SoapClient(wsdl string) (*Client, error) {
+	return SoapClientWithConfig(wsdl, &Config{Dump: false})
+}
+
+// SoapClientWithConfig return new *Client to handle the requests with the WSDL
+func SoapClientWithConfig(wsdl string, config *Config) (*Client, error) {
 	_, err := url.Parse(wsdl)
 	if err != nil {
 		return nil, err
@@ -31,6 +42,7 @@ func SoapClient(wsdl string) (*Client, error) {
 	c := &Client{
 		wsdl:       wsdl,
 		HttpClient: &http.Client{},
+		config:     config,
 	}
 
 	return c, nil
@@ -54,6 +66,7 @@ type Client struct {
 	onRequest            sync.WaitGroup
 	onDefinitionsRefresh sync.WaitGroup
 	wsdl                 string
+	config               *Config
 }
 
 // Call call's the method m with Params p
@@ -182,6 +195,14 @@ func (p *process) doRequest(url string) ([]byte, error) {
 		return nil, err
 	}
 
+	if p.Client.config != nil && p.Client.config.Dump {
+		dump, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Printf("Request:\n%v\n----\n", string(dump))
+	}
+
 	if p.Client.Username != "" && p.Client.Password != "" {
 		req.SetBasicAuth(p.Client.Username, p.Client.Password)
 	}
@@ -197,6 +218,14 @@ func (p *process) doRequest(url string) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if p.Client.config != nil && p.Client.config.Dump {
+		dump, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Printf("Response:\n%v\n----\n", string(dump))
+	}
 
 	return ioutil.ReadAll(resp.Body)
 }
