@@ -2,11 +2,12 @@ package gosoap
 
 import (
 	"encoding/xml"
-	"golang.org/x/net/html/charset"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
+
+	"golang.org/x/net/html/charset"
 )
 
 type wsdlDefinitions struct {
