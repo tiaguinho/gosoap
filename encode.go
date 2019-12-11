@@ -170,10 +170,10 @@ func (tokens *tokenData) startBody(m, n string) error {
 	r := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
-			Local: m,
+			Local: "ws:" + m,
 		},
 		Attr: []xml.Attr{
-			{Name: xml.Name{Space: "", Local: "xmlns"}, Value: n},
+			{Name: xml.Name{Space: "", Local: "xmlns:ws"}, Value: n},
 		},
 	}
 
@@ -194,7 +194,7 @@ func (tokens *tokenData) endBody(m string) {
 	r := xml.EndElement{
 		Name: xml.Name{
 			Space: "",
-			Local: m,
+			Local: "ws:" + m,
 		},
 	}
 
