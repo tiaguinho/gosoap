@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/xml"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -136,9 +135,9 @@ func (c *Client) Do(req *Request) (res *Response, err error) {
 		SoapAction: c.Definitions.GetSoapActionFromWsdlOperation(req.Method),
 	}
 
-	if p.SoapAction == "" {
-		p.SoapAction = fmt.Sprintf("%s/%s/%s", c.URL, c.Definitions.Services[0].Name, req.Method)
-	}
+	// if p.SoapAction == "" {
+	// 	p.SoapAction = fmt.Sprintf("%s/%s/%s", c.URL, c.Definitions.Services[0].Name, req.Method)
+	// }
 
 	p.Payload, err = xml.MarshalIndent(p, "", "    ")
 	if err != nil {
