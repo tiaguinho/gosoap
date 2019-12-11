@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -34,6 +35,7 @@ func SoapClient(wsdl string, httpClient *http.Client) (*Client, error) {
 	c := &Client{
 		wsdl:       wsdl,
 		HTTPClient: httpClient,
+		AutoAction: false,
 	}
 
 	return c, nil
@@ -43,6 +45,7 @@ func SoapClient(wsdl string, httpClient *http.Client) (*Client, error) {
 // request and response of the server
 type Client struct {
 	HTTPClient   *http.Client
+	AutoAction   bool
 	URL          string
 	HeaderName   string
 	HeaderParams HeaderParams
@@ -135,9 +138,9 @@ func (c *Client) Do(req *Request) (res *Response, err error) {
 		SoapAction: c.Definitions.GetSoapActionFromWsdlOperation(req.Method),
 	}
 
-	// if p.SoapAction == "" {
-	// 	p.SoapAction = fmt.Sprintf("%s/%s/%s", c.URL, c.Definitions.Services[0].Name, req.Method)
-	// }
+	if p.SoapAction == "" && c.AutoAction {
+		p.SoapAction = fmt.Sprintf("%s/%s/%s", c.URL, c.Definitions.Services[0].Name, req.Method)
+	}
 
 	p.Payload, err = xml.MarshalIndent(p, "", "    ")
 	if err != nil {
