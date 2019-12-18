@@ -154,7 +154,6 @@ func (tokens *tokenData) endHeader(m string) {
 	tokens.data = append(tokens.data, r, h)
 }
 
-// startToken initiate body of the envelope
 func (tokens *tokenData) startBody(m, n string) error {
 	b := xml.StartElement{
 		Name: xml.Name{
@@ -170,10 +169,10 @@ func (tokens *tokenData) startBody(m, n string) error {
 	r := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
-			Local: "ws:" + m,
+			Local: m,
 		},
 		Attr: []xml.Attr{
-			{Name: xml.Name{Space: "", Local: "xmlns:ws"}, Value: n},
+			{Name: xml.Name{Space: "", Local: "xmlns"}, Value: n},
 		},
 	}
 
@@ -194,7 +193,7 @@ func (tokens *tokenData) endBody(m string) {
 	r := xml.EndElement{
 		Name: xml.Name{
 			Space: "",
-			Local: "ws:" + m,
+			Local: m,
 		},
 	}
 
