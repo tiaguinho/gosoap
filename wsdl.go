@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"golang.org/x/net/html/charset"
 )
 
@@ -160,8 +159,6 @@ type xsdMaxInclusive struct {
 }
 
 func DownloadWSDL(URL, login, pass string) (*http.Response, error) {
-	logrus.Debugf("Загружаем WSDL %q", URL)
-
 	req, err := http.NewRequest(http.MethodGet, URL, nil)
 	if err != nil {
 		return nil, err
