@@ -17,19 +17,20 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 
 	tokens.startEnvelope()
 	if len(c.Client.HeaderParams) > 0 {
-		tokens.startHeader(c.Client.HeaderName, c.Client.Definitions.Types[0].XsdSchema[0].TargetNamespace)
+		tokens.startHeader(c.Client.HeaderName, c.Client.Definitions.Types[0].XsdSchema[0].TargetNamespace) // ToDo taking from the first line is not correct
 
-		tokens.recursiveEncode(c.Client.HeaderParams)
+		tokens.recursiveEncodePaqram(c.Client.HeaderParams, "")
 
 		tokens.endHeader(c.Client.HeaderName)
 	}
 
-	err := tokens.startBody(c.Request.Method, c.Client.Definitions.Types[0].XsdSchema[0].TargetNamespace)
+	// append namespace for a custom type
+	err := tokens.startBody(c.Request.Method, c.Client.Definitions.Types[0].getWsdlSchema(c.Request.Method).TargetNamespace)
 	if err != nil {
 		return err
 	}
 
-	tokens.recursiveEncode(c.Request.Params)
+	tokens.recursiveEncodePaqram(c.Request.Params, c.Client.Definitions.TargetNamespace)
 
 	//end envelope
 	tokens.endBody(c.Request.Method)
@@ -49,7 +50,7 @@ type tokenData struct {
 	data []xml.Token
 }
 
-func (tokens *tokenData) recursiveEncode(hm interface{}) {
+func (tokens *tokenData) recursiveEncodePaqram(hm interface{}, namespace string) {
 	v := reflect.ValueOf(hm)
 
 	switch v.Kind() {
@@ -57,18 +58,18 @@ func (tokens *tokenData) recursiveEncode(hm interface{}) {
 		for _, key := range v.MapKeys() {
 			t := xml.StartElement{
 				Name: xml.Name{
-					Space: "",
+					Space: namespace,
 					Local: key.String(),
 				},
 			}
 
 			tokens.data = append(tokens.data, t)
-			tokens.recursiveEncode(v.MapIndex(key).Interface())
+			tokens.recursiveEncodePaqram(v.MapIndex(key).Interface(), namespace)
 			tokens.data = append(tokens.data, xml.EndElement{Name: t.Name})
 		}
 	case reflect.Slice:
 		for i := 0; i < v.Len(); i++ {
-			tokens.recursiveEncode(v.Index(i).Interface())
+			tokens.recursiveEncodePaqram(v.Index(i).Interface(), namespace)
 		}
 	case reflect.String:
 		content := xml.CharData(v.String())
@@ -83,6 +84,7 @@ func (tokens *tokenData) startEnvelope() {
 			Local: "soap:Envelope",
 		},
 		Attr: []xml.Attr{
+			// Default
 			{Name: xml.Name{Space: "", Local: "xmlns:xsi"}, Value: "http://www.w3.org/2001/XMLSchema-instance"},
 			{Name: xml.Name{Space: "", Local: "xmlns:xsd"}, Value: "http://www.w3.org/2001/XMLSchema"},
 			{Name: xml.Name{Space: "", Local: "xmlns:soap"}, Value: "http://schemas.xmlsoap.org/soap/envelope/"},

@@ -3,6 +3,7 @@ package gosoap
 import (
 	"fmt"
 	"os"
+	"path"
 	"testing"
 )
 
@@ -24,13 +25,13 @@ func Test_getWsdlBody(t *testing.T) {
 		},
 		{
 			args: args{
-				u: fmt.Sprintf("%s/%s", dir, "testdata/ipservice.wsdl"),
+				u: path.Join(dir, "testdata", "ipservice.wsdl"),
 			},
 			wantErr: true,
 		},
 		{
 			args: args{
-				u: fmt.Sprintf("file://%s/%s", dir, "testdata/ipservice.wsdl"),
+				u: fmt.Sprintf("file:\\\\%s\\%s", dir, "testdata\\ipservice.wsdl"), // for windows
 			},
 			wantErr: false,
 		},
@@ -49,7 +50,7 @@ func Test_getWsdlBody(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := getWsdlBody(tt.args.u)
+			_, err := getWsdlBody(tt.args.u, "", "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getwsdlBody() error = %v, wantErr %v", err, tt.wantErr)
 				return
