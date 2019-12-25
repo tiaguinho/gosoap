@@ -2,11 +2,14 @@ package gosoap
 
 import (
 	"encoding/xml"
-	"golang.org/x/net/html/charset"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
+
+	"golang.org/x/net/html/charset"
 )
 
 type wsdlDefinitions struct {
@@ -155,19 +158,39 @@ type xsdMaxInclusive struct {
 	Value string `xml:"value,attr"`
 }
 
-func getWsdlBody(u string) (reader io.ReadCloser, err error) {
+func DownloadWSDL(URL, login, pass string) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, URL, nil)
+	if err != nil {
+		return nil, err
+	}
+	if login != "" {
+		req.SetBasicAuth(login, pass)
+	}
+
+	httpClient := new(http.Client)
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status code %v", resp.StatusCode)
+	}
+	return resp, nil
+}
+
+func getWsdlBody(u, username, password string) (reader io.ReadCloser, err error) {
 	parse, err := url.Parse(u)
 	if err != nil {
 		return nil, err
 	}
 	if parse.Scheme == "file" {
-		outFile, err := os.Open(parse.Path)
+		outFile, err := os.Open(strings.Replace(u, fmt.Sprintf("%s:\\\\", parse.Scheme), "", -1))
 		if err != nil {
 			return nil, err
 		}
 		return outFile, nil
 	}
-	r, err := http.Get(u)
+	r, err := DownloadWSDL(u, username, password) // usually to download wsdl you need authorization
 	if err != nil {
 		return nil, err
 	}
@@ -175,8 +198,8 @@ func getWsdlBody(u string) (reader io.ReadCloser, err error) {
 }
 
 // getWsdlDefinitions sent request to the wsdl url and set definitions on struct
-func getWsdlDefinitions(u string) (wsdl *wsdlDefinitions, err error) {
-	reader, err := getWsdlBody(u)
+func getWsdlDefinitions(u, username, password string) (wsdl *wsdlDefinitions, err error) {
+	reader, err := getWsdlBody(u, username, password)
 	if err != nil {
 		return nil, err
 	}
@@ -211,4 +234,16 @@ type Fault struct {
 	Code        string `xml:"faultcode"`
 	Description string `xml:"faultstring"`
 	Detail      string `xml:"detail"`
+}
+
+func (t wsdlTypes) getWsdlSchema(nodeName string) (result *xsdSchema) {
+	for _, schema := range t.XsdSchema {
+		for _, element := range schema.Elements {
+			if element.Name == nodeName {
+				return schema
+			}
+		}
+	}
+
+	return &xsdSchema{}
 }
