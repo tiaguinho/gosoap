@@ -2,11 +2,12 @@ package gosoap
 
 import (
 	"encoding/xml"
-	"golang.org/x/net/html/charset"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
+
+	"golang.org/x/net/html/charset"
 )
 
 type wsdlDefinitions struct {
@@ -155,28 +156,41 @@ type xsdMaxInclusive struct {
 	Value string `xml:"value,attr"`
 }
 
-func getWsdlBody(u string) (reader io.ReadCloser, err error) {
-	parse, err := url.Parse(u)
+func (c *Client) getWsdlBody() (reader io.ReadCloser, err error) {
+	parse, err := url.Parse(c.wsdl)
 	if err != nil {
 		return nil, err
 	}
+
 	if parse.Scheme == "file" {
 		outFile, err := os.Open(parse.Path)
 		if err != nil {
 			return nil, err
 		}
+
 		return outFile, nil
 	}
-	r, err := http.Get(u)
+
+	req, err := http.NewRequest("GET", c.wsdl, nil)
 	if err != nil {
 		return nil, err
 	}
-	return r.Body, nil
+
+	if c.Username != "" && c.Password != "" {
+		req.SetBasicAuth(c.Username, c.Password)
+	}
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Body, nil
 }
 
 // getWsdlDefinitions sent request to the wsdl url and set definitions on struct
-func getWsdlDefinitions(u string) (wsdl *wsdlDefinitions, err error) {
-	reader, err := getWsdlBody(u)
+func (c *Client) getWsdlDefinitions() (wsdl *wsdlDefinitions, err error) {
+	reader, err := c.getWsdlBody()
 	if err != nil {
 		return nil, err
 	}
@@ -203,6 +217,7 @@ func (wsdl *wsdlDefinitions) GetSoapActionFromWsdlOperation(operation string) st
 			}
 		}
 	}
+
 	return ""
 }
 

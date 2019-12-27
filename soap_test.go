@@ -1,7 +1,11 @@
 package gosoap
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -153,7 +157,7 @@ func TestClient_Call(t *testing.T) {
 		t.Errorf("error: %+v", rw)
 	}
 
-	c := &Client{}
+	c := &Client{HttpClient: http.DefaultClient}
 	res, err = c.Call("", Params{})
 	if err == nil {
 		t.Errorf("error expected but nothing got.")
@@ -216,5 +220,44 @@ func TestProcess_doRequest(t *testing.T) {
 	_, err = c.doRequest("://teste.")
 	if err == nil {
 		t.Errorf("invalid WSDL")
+	}
+}
+
+func TestClient_CallWithAuth(t *testing.T) {
+	testUser, testPass := "test_user", "test_pass"
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, pass, ok := r.BasicAuth()
+		if !ok {
+			t.Error("request must be with auth")
+		}
+
+		if user != testUser || pass != testPass {
+			t.Errorf("username must %q, pass must be %q", testUser, testPass)
+		}
+
+		dir, _ := os.Getwd()
+
+		data, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", dir, "testdata/ipservice.wsdl"))
+		if err != nil {
+			t.Error(err)
+		}
+
+		fmt.Fprintln(w, string(data))
+
+	}))
+	defer ts.Close()
+
+	soap, err := SoapClient(ts.URL)
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	soap.Username = testUser
+	soap.Password = testPass
+
+	_, err = soap.Call("test", Params{})
+	if err != nil {
+		t.Errorf("error in soap call: %s", err)
 	}
 }
