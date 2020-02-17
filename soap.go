@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/sirupsen/logrus"
+	"moul.io/http2curl"
 )
 
 // HeaderParams holds params specific to the header
@@ -40,7 +43,7 @@ func SoapClient(wsdl string) (*Client, error) {
 // Client struct hold all the informations about WSDL,
 // request and response of the server
 type Client struct {
-	HttpClient 	 *http.Client
+	HttpClient   *http.Client
 	WSDL         string
 	URL          string
 	Method       string
@@ -126,6 +129,9 @@ func (c *Client) doRequest(url string) ([]byte, error) {
 	req.Header.Add("Content-Type", "text/xml;charset=UTF-8")
 	req.Header.Add("Accept", "text/xml")
 	req.Header.Add("SOAPAction", c.SoapAction)
+
+	command, _ := http2curl.GetCurlCommand(req)
+	logrus.Debugf("\nHTTP REQUEST AS cURL:\n%+v\n\n", command)
 
 	resp, err := c.HttpClient.Do(req)
 	if err != nil {
