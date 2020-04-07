@@ -197,7 +197,7 @@ func (wsdl *wsdlDefinitions) GetSoapActionFromWsdlOperation(operation string) st
 	if wsdl.Bindings[0] != nil {
 		for _, o := range wsdl.Bindings[0].Operations {
 			if o.Name == operation {
-				if o.SoapOperations[0] != nil {
+				if len(o.SoapOperations) > 0 && o.SoapOperations[0] != nil {
 					return o.SoapOperations[0].SoapAction
 				}
 			}
