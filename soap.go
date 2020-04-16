@@ -19,7 +19,9 @@ import (
 type HeaderParams map[string]interface{}
 
 // Params type is used to set the params in soap request
+type SoapParams interface {}
 type Params map[string]interface{}
+type ArrayParams [][2]interface{}
 
 // SoapClient return new *Client to handle the requests with the WSDL
 func SoapClient(wsdl string) (*Client, error) {
@@ -57,7 +59,7 @@ type Client struct {
 }
 
 // Call call's the method m with Params p
-func (c *Client) Call(m string, p Params) (res *Response, err error) {
+func (c *Client) Call(m string, p SoapParams) (res *Response, err error) {
 	return c.Do(NewRequest(m, p))
 }
 
