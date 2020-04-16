@@ -7,10 +7,10 @@ import (
 // Soap Request
 type Request struct {
 	Method string
-	Params Params
+	Params SoapParams
 }
 
-func NewRequest(m string, p Params) *Request {
+func NewRequest(m string, p SoapParams) *Request {
 	return &Request{
 		Method: m,
 		Params: p,
