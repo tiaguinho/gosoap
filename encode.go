@@ -72,7 +72,7 @@ func (tokens *tokenData) recursiveEncode(hm interface{}) {
 		}
 	case reflect.Array:
 		if v.Len() == 2 {
-			label:=v.Index(0).Interface()
+			label := v.Index(0).Interface()
 			t := xml.StartElement{
 				Name: xml.Name{
 					Space: "",
