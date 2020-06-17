@@ -3,6 +3,8 @@ package gosoap
 import (
 	"fmt"
 	"os"
+	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -11,6 +13,13 @@ func Test_getWsdlBody(t *testing.T) {
 		u string
 	}
 	dir, _ := os.Getwd()
+
+	// in windows, os.Getwd() returns backslash (\) instead slash (/) for path separator
+	// replacing the backslash for slash make the test happy on Windows
+	if runtime.GOOS == "windows" {
+		dir = strings.ReplaceAll(dir, `\`, "/")
+	}
+
 	tests := []struct {
 		name    string
 		args    args
