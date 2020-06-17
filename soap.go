@@ -22,15 +22,20 @@ type HeaderParams map[string]interface{}
 type Params map[string]interface{}
 
 // SoapClient return new *Client to handle the requests with the WSDL
-func SoapClient(wsdl string) (*Client, error) {
+func SoapClient(wsdl string, httpClient *http.Client) (*Client, error) {
 	_, err := url.Parse(wsdl)
 	if err != nil {
 		return nil, err
 	}
 
+	if httpClient == nil {
+		httpClient = &http.Client{}
+	}
+
 	c := &Client{
 		wsdl:       wsdl,
-		HttpClient: &http.Client{},
+		HTTPClient: httpClient,
+		AutoAction: false,
 	}
 
 	return c, nil
@@ -39,7 +44,8 @@ func SoapClient(wsdl string) (*Client, error) {
 // Client struct hold all the informations about WSDL,
 // request and response of the server
 type Client struct {
-	HttpClient   *http.Client
+	HTTPClient   *http.Client
+	AutoAction   bool
 	URL          string
 	HeaderName   string
 	HeaderParams HeaderParams
@@ -61,7 +67,7 @@ func (c *Client) Call(m string, p Params) (res *Response, err error) {
 	return c.Do(NewRequest(m, p))
 }
 
-// Call call's by struct
+// CallByStruct call's by struct
 func (c *Client) CallByStruct(s RequestStruct) (res *Response, err error) {
 	req, err := NewRequestByStruct(s)
 	if err != nil {
@@ -82,12 +88,13 @@ func (c *Client) waitAndRefreshDefinitions(d time.Duration) {
 }
 
 func (c *Client) initWsdl() {
-	c.Definitions, c.definitionsErr = getWsdlDefinitions(c.wsdl)
+	c.Definitions, c.definitionsErr = getWsdlDefinitions(c.wsdl, c.HTTPClient)
 	if c.definitionsErr == nil {
 		c.URL = strings.TrimSuffix(c.Definitions.TargetNamespace, "/")
 	}
 }
 
+// SetWSDL set WSDL url
 func (c *Client) SetWSDL(wsdl string) {
 	c.onRequest.Wait()
 	c.onDefinitionsRefresh.Wait()
@@ -99,7 +106,7 @@ func (c *Client) SetWSDL(wsdl string) {
 	c.initWsdl()
 }
 
-// Process Soap Request
+// Do Process Soap Request
 func (c *Client) Do(req *Request) (res *Response, err error) {
 	c.onDefinitionsRefresh.Wait()
 	c.onRequest.Add(1)
@@ -131,8 +138,8 @@ func (c *Client) Do(req *Request) (res *Response, err error) {
 		SoapAction: c.Definitions.GetSoapActionFromWsdlOperation(req.Method),
 	}
 
-	if p.SoapAction == "" {
-		p.SoapAction = fmt.Sprintf("%s/%s", c.URL, req.Method)
+	if p.SoapAction == "" && c.AutoAction {
+		p.SoapAction = fmt.Sprintf("%s/%s/%s", c.URL, c.Definitions.Services[0].Name, req.Method)
 	}
 
 	p.Payload, err = xml.MarshalIndent(p, "", "    ")
@@ -202,17 +209,19 @@ func (p *process) doRequest(url string) ([]byte, error) {
 }
 
 func (p *process) httpClient() *http.Client {
-	if p.Client.HttpClient != nil {
-		return p.Client.HttpClient
+	if p.Client.HTTPClient != nil {
+		return p.Client.HTTPClient
 	}
 	return http.DefaultClient
 }
 
+// ErrorWithPayload error payload schema
 type ErrorWithPayload struct {
 	error
 	Payload []byte
 }
 
+// GetPayloadFromError returns the payload of a ErrorWithPayload
 func GetPayloadFromError(err error) []byte {
 	if err, ok := err.(ErrorWithPayload); ok {
 		return err.Payload

@@ -154,7 +154,6 @@ func (tokens *tokenData) endHeader(m string) {
 	tokens.data = append(tokens.data, r, h)
 }
 
-// startToken initiate body of the envelope
 func (tokens *tokenData) startBody(m, n string) error {
 	b := xml.StartElement{
 		Name: xml.Name{
