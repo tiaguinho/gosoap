@@ -40,7 +40,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("SoapClient error: %s", err)
 	}
-
+	
+	// Use gosoap.ArrayParams to support fixed position params
 	params := gosoap.Params{
 		"sIp": "8.8.8.8",
 	}
