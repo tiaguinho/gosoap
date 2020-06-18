@@ -168,6 +168,9 @@ func getWsdlBody(u string, c *http.Client) (reader io.ReadCloser, err error) {
 		}
 		return outFile, nil
 	}
+	if c == nil {
+		c = &http.Client{}
+	}
 	r, err := c.Get(u)
 	if err != nil {
 		return nil, err
