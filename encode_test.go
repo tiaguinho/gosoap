@@ -41,7 +41,7 @@ func TestClient_MarshalXML(t *testing.T) {
 }
 
 func TestClient_MarshalXML2(t *testing.T) {
-	soap, err := SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl")
+	soap, err := SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl", nil)
 	if err != nil {
 		t.Errorf("error not expected: %s", err)
 	}
