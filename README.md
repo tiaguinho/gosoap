@@ -15,9 +15,6 @@ package main
 import (
 	"encoding/xml"
 	"log"
-	"net/http"
-	"time"
-
 	"github.com/tiaguinho/gosoap"
 )
 
@@ -38,10 +35,7 @@ var (
 )
 
 func main() {
-	httpClient := &http.Client{
-		Timeout: 1500 * time.Millisecond,
-	}
-	soap, err := gosoap.SoapClient("http://wsgeoip.lavasoft.com/ipservice.asmx?WSDL", httpClient)
+	soap, err := gosoap.SoapClient("http://wsgeoip.lavasoft.com/ipservice.asmx?WSDL")
 	if err != nil {
 		log.Fatalf("SoapClient error: %s", err)
 	}
@@ -51,12 +45,12 @@ func main() {
 		"sIp": "8.8.8.8",
 	}
 
-	res, err := soap.Call("GetIpLocation", params)
+	err = soap.Call("GetIpLocation", params)
 	if err != nil {
 		log.Fatalf("Call error: %s", err)
 	}
 
-	res.Unmarshal(&r)
+	soap.Unmarshal(&r)
 
 	// GetIpLocationResult will be a string. We need to parse it to XML
 	result := GetIPLocationResult{}
