@@ -2,11 +2,12 @@ package gosoap
 
 import (
 	"encoding/xml"
-	"golang.org/x/net/html/charset"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
+
+	"golang.org/x/net/html/charset"
 )
 
 type wsdlDefinitions struct {
@@ -155,7 +156,7 @@ type xsdMaxInclusive struct {
 	Value string `xml:"value,attr"`
 }
 
-func getWsdlBody(u string) (reader io.ReadCloser, err error) {
+func getWsdlBody(u string, c *http.Client) (reader io.ReadCloser, err error) {
 	parse, err := url.Parse(u)
 	if err != nil {
 		return nil, err
@@ -167,7 +168,10 @@ func getWsdlBody(u string) (reader io.ReadCloser, err error) {
 		}
 		return outFile, nil
 	}
-	r, err := http.Get(u)
+	if c == nil {
+		c = &http.Client{}
+	}
+	r, err := c.Get(u)
 	if err != nil {
 		return nil, err
 	}
@@ -175,8 +179,8 @@ func getWsdlBody(u string) (reader io.ReadCloser, err error) {
 }
 
 // getWsdlDefinitions sent request to the wsdl url and set definitions on struct
-func getWsdlDefinitions(u string) (wsdl *wsdlDefinitions, err error) {
-	reader, err := getWsdlBody(u)
+func getWsdlDefinitions(u string, c *http.Client) (wsdl *wsdlDefinitions, err error) {
+	reader, err := getWsdlBody(u, c)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +201,7 @@ func (wsdl *wsdlDefinitions) GetSoapActionFromWsdlOperation(operation string) st
 	if wsdl.Bindings[0] != nil {
 		for _, o := range wsdl.Bindings[0].Operations {
 			if o.Name == operation {
-				if o.SoapOperations[0] != nil {
+				if len(o.SoapOperations) > 0 && o.SoapOperations[0] != nil {
 					return o.SoapOperations[0].SoapAction
 				}
 			}

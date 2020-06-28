@@ -70,6 +70,20 @@ func (tokens *tokenData) recursiveEncode(hm interface{}) {
 		for i := 0; i < v.Len(); i++ {
 			tokens.recursiveEncode(v.Index(i).Interface())
 		}
+	case reflect.Array:
+		if v.Len() == 2 {
+			label := v.Index(0).Interface()
+			t := xml.StartElement{
+				Name: xml.Name{
+					Space: "",
+					Local: label.(string),
+				},
+			}
+
+			tokens.data = append(tokens.data, t)
+			tokens.recursiveEncode(v.Index(1).Interface())
+			tokens.data = append(tokens.data, xml.EndElement{Name: t.Name})
+		}
 	case reflect.String:
 		content := xml.CharData(v.String())
 		tokens.data = append(tokens.data, content)
@@ -154,7 +168,6 @@ func (tokens *tokenData) endHeader(m string) {
 	tokens.data = append(tokens.data, r, h)
 }
 
-// startToken initiate body of the envelope
 func (tokens *tokenData) startBody(m, n string) error {
 	b := xml.StartElement{
 		Name: xml.Name{

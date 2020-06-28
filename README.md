@@ -15,6 +15,8 @@ package main
 import (
 	"encoding/xml"
 	"log"
+	"net/http"
+	"time"
 
 	"github.com/tiaguinho/gosoap"
 )
@@ -36,11 +38,15 @@ var (
 )
 
 func main() {
-	soap, err := gosoap.SoapClient("http://wsgeoip.lavasoft.com/ipservice.asmx?WSDL")
+	httpClient := &http.Client{
+		Timeout: 1500 * time.Millisecond,
+	}
+	soap, err := gosoap.SoapClient("http://wsgeoip.lavasoft.com/ipservice.asmx?WSDL", httpClient)
 	if err != nil {
 		log.Fatalf("SoapClient error: %s", err)
 	}
-
+	
+	// Use gosoap.ArrayParams to support fixed position params
 	params := gosoap.Params{
 		"sIp": "8.8.8.8",
 	}
