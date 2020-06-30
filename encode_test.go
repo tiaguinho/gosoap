@@ -53,3 +53,22 @@ func TestClient_MarshalXML2(t *testing.T) {
 		}
 	}
 }
+
+func TestSetCustomEnvelope(t *testing.T) {
+	SetCustomEnvelope("soapenv", map[string]string{
+		"xmlns:soapenv": "http://schemas.xmlsoap.org/soap/envelope/",
+		"xmlns:tem": "http://tempuri.org/",
+	})
+
+	soap, err := SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl", nil)
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	for _, test := range arrayParamsTests {
+		_, err = soap.Call("checkVat", test.Params)
+		if err == nil {
+			t.Errorf(test.Err)
+		}
+	}
+}
