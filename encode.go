@@ -6,6 +6,19 @@ import (
 	"reflect"
 )
 
+var (
+	soapPrefix = "soap"
+	customEnvelopeAttrs map[string]string = nil
+)
+
+// SetCustomEnvelope define customizated envelope
+func SetCustomEnvelope(prefix string, attrs map[string]string) {
+	soapPrefix = prefix
+	if attrs != nil {
+		customEnvelopeAttrs = attrs
+	}
+}
+
 // MarshalXML envelope the body and encode to xml
 func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	tokens := &tokenData{}
@@ -94,13 +107,24 @@ func (tokens *tokenData) startEnvelope() {
 	e := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
-			Local: "soap:Envelope",
+			Local: fmt.Sprintf("%s:Envelope", soapPrefix),
 		},
-		Attr: []xml.Attr{
+	}
+
+	if customEnvelopeAttrs == nil {
+		e.Attr = []xml.Attr{
 			{Name: xml.Name{Space: "", Local: "xmlns:xsi"}, Value: "http://www.w3.org/2001/XMLSchema-instance"},
 			{Name: xml.Name{Space: "", Local: "xmlns:xsd"}, Value: "http://www.w3.org/2001/XMLSchema"},
 			{Name: xml.Name{Space: "", Local: "xmlns:soap"}, Value: "http://schemas.xmlsoap.org/soap/envelope/"},
-		},
+		}
+	} else {
+		e.Attr = make([]xml.Attr, 0)
+		for local, value := range customEnvelopeAttrs {
+			e.Attr = append(e.Attr, xml.Attr{
+				Name: xml.Name{Space: "", Local: local},
+				Value: value,
+			})
+		}
 	}
 
 	tokens.data = append(tokens.data, e)
@@ -110,7 +134,7 @@ func (tokens *tokenData) endEnvelope() {
 	e := xml.EndElement{
 		Name: xml.Name{
 			Space: "",
-			Local: "soap:Envelope",
+			Local: fmt.Sprintf("%s:Envelope", soapPrefix),
 		},
 	}
 
@@ -121,7 +145,7 @@ func (tokens *tokenData) startHeader(m, n string) {
 	h := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
-			Local: "soap:Header",
+			Local: fmt.Sprintf("%s:Header", soapPrefix),
 		},
 	}
 
@@ -149,7 +173,7 @@ func (tokens *tokenData) endHeader(m string) {
 	h := xml.EndElement{
 		Name: xml.Name{
 			Space: "",
-			Local: "soap:Header",
+			Local: fmt.Sprintf("%s:Header", soapPrefix),
 		},
 	}
 
@@ -172,7 +196,7 @@ func (tokens *tokenData) startBody(m, n string) error {
 	b := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
-			Local: "soap:Body",
+			Local: fmt.Sprintf("%s:Body", soapPrefix),
 		},
 	}
 
@@ -200,7 +224,7 @@ func (tokens *tokenData) endBody(m string) {
 	b := xml.EndElement{
 		Name: xml.Name{
 			Space: "",
-			Local: "soap:Body",
+			Local: fmt.Sprintf("%s:Body", soapPrefix),
 		},
 	}
 
