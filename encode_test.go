@@ -54,6 +54,20 @@ func TestClient_MarshalXML2(t *testing.T) {
 	}
 }
 
+func TestClient_MarshalXML3(t *testing.T) {
+	soap, err := SoapClient("https://kasapi.kasserver.com/soap/wsdl/KasAuth.wsdl", nil)
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	for _, test := range mapParamsTests {
+		_, err = soap.Call("checkVat", test.Params)
+		if err == nil {
+			t.Errorf(test.Err)
+		}
+	}
+}
+
 func TestSetCustomEnvelope(t *testing.T) {
 	SetCustomEnvelope("soapenv", map[string]string{
 		"xmlns:soapenv": "http://schemas.xmlsoap.org/soap/envelope/",
