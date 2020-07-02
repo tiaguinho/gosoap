@@ -28,16 +28,21 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 		return fmt.Errorf("definitions is nil")
 	}
 
+	namespace := ""
+	if c.Client.Definitions.Types != nil {
+		namespace = c.Client.Definitions.Types[0].XsdSchema[0].TargetNamespace
+	}
+
 	tokens.startEnvelope()
 	if len(c.Client.HeaderParams) > 0 {
-		tokens.startHeader(c.Client.HeaderName, c.Client.Definitions.Types[0].XsdSchema[0].TargetNamespace)
+		tokens.startHeader(c.Client.HeaderName, namespace)
 
 		tokens.recursiveEncode(c.Client.HeaderParams)
 
 		tokens.endHeader(c.Client.HeaderName)
 	}
 
-	err := tokens.startBody(c.Request.Method, c.Client.Definitions.Types[0].XsdSchema[0].TargetNamespace)
+	err := tokens.startBody(c.Request.Method, namespace)
 	if err != nil {
 		return err
 	}
