@@ -26,8 +26,9 @@ func (e FaultError) Error() string {
 }
 
 // IsFault returns whether the given error is a fault error or not.
-// NOTE: IsFault will return false when the error could not be typecasted to FaultError, because
-// every fault error will have it's dynamic type as FaultError.
+//
+// IsFault will return false when the error could not be typecasted to FaultError, because
+// every fault error should have it's dynamic type as FaultError.
 func IsFault(err error) bool {
 	if _, ok := err.(FaultError); !ok {
 		return false

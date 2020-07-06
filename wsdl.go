@@ -212,6 +212,7 @@ func (wsdl *wsdlDefinitions) GetSoapActionFromWsdlOperation(operation string) st
 }
 
 // Fault response
+// Fault implements Stringer interface
 type Fault struct {
 	Code        string `xml:"faultcode"`
 	Description string `xml:"faultstring"`
