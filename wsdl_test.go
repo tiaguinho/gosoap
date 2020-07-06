@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"gotest.tools/assert"
 )
 
 func Test_getWsdlBody(t *testing.T) {
@@ -64,5 +66,29 @@ func Test_getWsdlBody(t *testing.T) {
 				return
 			}
 		})
+	}
+}
+
+func TestFaultString(t *testing.T) {
+	var testCases = []struct {
+		description      string
+		fault            *Fault
+		expectedFaultStr string
+	}{
+		{
+			description: "success case: fault string",
+			fault: &Fault{
+				Code:        "soap:SERVER",
+				Description: "soap exception",
+			},
+			expectedFaultStr: "[soap:SERVER]: soap exception",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Logf("running %v testCase", testCase.description)
+
+		faultStr := testCase.fault.String()
+		assert.Equal(t, testCase.expectedFaultStr, faultStr)
 	}
 }

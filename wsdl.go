@@ -2,6 +2,7 @@ package gosoap
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -211,8 +212,13 @@ func (wsdl *wsdlDefinitions) GetSoapActionFromWsdlOperation(operation string) st
 }
 
 // Fault response
+// Fault implements Stringer interface
 type Fault struct {
 	Code        string `xml:"faultcode"`
 	Description string `xml:"faultstring"`
 	Detail      string `xml:"detail"`
+}
+
+func (f *Fault) String() string {
+	return fmt.Sprintf("[%s]: %s", f.Code, f.Description)
 }
