@@ -2,6 +2,7 @@ package gosoap
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -215,4 +216,8 @@ type Fault struct {
 	Code        string `xml:"faultcode"`
 	Description string `xml:"faultstring"`
 	Detail      string `xml:"detail"`
+}
+
+func (f *Fault) String() string {
+	return fmt.Sprintf("[%s]: %s", f.Code, f.Description)
 }
