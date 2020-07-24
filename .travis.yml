@@ -5,6 +5,8 @@ go:
 
 before_install:
   - go get -t -v ./...
+
+install:
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/mattn/goveralls
 
