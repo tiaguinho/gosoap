@@ -215,6 +215,11 @@ func TestClient_CallByStruct(t *testing.T) {
 	if rv.CountryCode != "IE" {
 		t.Errorf("error: %+v", rv)
 	}
+
+	_, err = soap.CallByStruct(nil)
+	if err == nil {
+		t.Error("err can't be nil")
+	}
 }
 
 func TestClient_Call_NonUtf8(t *testing.T) {
