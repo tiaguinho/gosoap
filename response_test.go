@@ -82,6 +82,17 @@ func TestUnmarshal(t *testing.T) {
 			}{},
 			isFaultError: false,
 		},
+		{
+			description: "case: body is empty",
+			response: &Response{
+				Body: []byte(``),
+			},
+			decodeStruct: &struct {
+				XMLName            xml.Name `xml:"GetJobsByIdsResponse"`
+				GetJobsByIDsResult string
+			}{},
+			isFaultError: false,
+		},
 	}
 
 	for _, testCase := range testCases {
