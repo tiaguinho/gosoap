@@ -20,7 +20,7 @@ import (
 type HeaderParams map[string]interface{}
 
 // Params type is used to set the params in soap request
-type SoapParams interface {}
+type SoapParams interface{}
 type Params map[string]interface{}
 type ArrayParams [][2]interface{}
 
@@ -234,6 +234,10 @@ func (p *process) doRequest(url string) ([]byte, error) {
 			return nil, err
 		}
 		fmt.Printf("Response:\n%v\n----\n", string(dump))
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return nil, errors.New("unexpected status code: " + resp.Status)
 	}
 
 	return ioutil.ReadAll(resp.Body)
