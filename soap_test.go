@@ -102,8 +102,8 @@ var (
 )
 
 func TestClient_Call(t *testing.T) {
-	soap, err := SoapClientWithConfig("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl", 
-    nil,
+	soap, err := SoapClientWithConfig("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl",
+		nil,
 		&Config{Dump: true},
 	)
 	if err != nil {
@@ -249,5 +249,14 @@ func TestProcess_doRequest(t *testing.T) {
 	_, err = c.doRequest("://teste.")
 	if err == nil {
 		t.Errorf("invalid WSDL")
+	}
+
+	_, err = c.doRequest("https://google.com/non-existent-url")
+	if err == nil {
+		t.Errorf("err can't be nil")
+	}
+
+	if err != nil && err.Error() != "unexpected status code: 404 Not Found" {
+		t.Errorf("unexpected error: %s", err)
 	}
 }
