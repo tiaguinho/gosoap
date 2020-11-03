@@ -240,7 +240,7 @@ func (p *process) doRequest(url string) ([]byte, error) {
 		responseBodyBytes, err := ioutil.ReadAll(resp.Body)
 
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Unexpected status code: %d", resp.StatusCode)
 		}
 
 		return nil, fmt.Errorf("Unexpected status code: %d.\nDetail: %s", resp.StatusCode, responseBodyBytes)
