@@ -80,8 +80,9 @@ func TestFaultString(t *testing.T) {
 			fault: &Fault{
 				Code:        "soap:SERVER",
 				Description: "soap exception",
+				Detail:      "soap detail",
 			},
-			expectedFaultStr: "[soap:SERVER]: soap exception",
+			expectedFaultStr: "[soap:SERVER]: soap exception | Detail: soap detail",
 		},
 	}
 
