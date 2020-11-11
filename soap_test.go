@@ -256,7 +256,7 @@ func TestProcess_doRequest(t *testing.T) {
 		t.Errorf("err can't be nil")
 	}
 
-	if err != nil && err.Error() != "Unexpected status code: 404" {
+	if err != nil && err.Error() != "unexpected status code: 404 Not Found" {
 		t.Errorf("unexpected error: %s", err)
 	}
 }

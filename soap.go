@@ -237,7 +237,7 @@ func (p *process) doRequest(url string) ([]byte, error) {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("Unexpected status code: %d", resp.StatusCode)
+		return nil, errors.New("unexpected status code: " + resp.Status)
 	}
 
 	return ioutil.ReadAll(resp.Body)
