@@ -2,7 +2,10 @@ package gosoap
 
 import (
 	"crypto/tls"
+	"fmt"
+	"log"
 	"net/http"
+	"regexp"
 	"testing"
 )
 
@@ -192,6 +195,53 @@ func TestClient_Call(t *testing.T) {
 	res, err = c.Call("checkVat", params)
 	if err == nil {
 		t.Errorf("invalid WSDL")
+	}
+}
+
+type customLogger struct{}
+
+func (c customLogger) LogRequest(method string, dump []byte) {
+	var re = regexp.MustCompile(`(<vatNumber>)[\s\S]*?(<\/vatNumber>)`)
+	maskedResponse := re.ReplaceAllString(string(dump), `${1}XXX${2}`)
+
+	log.Println(fmt.Sprintf("%s request: %s", method, maskedResponse))
+}
+
+func (c customLogger) LogResponse(method string, dump []byte) {
+	if method == "checkVat" {
+		return
+	}
+
+	log.Println(fmt.Sprintf("Response: %s", dump))
+}
+
+func TestClient_Call_WithCustomLogger(t *testing.T) {
+	soap, err := SoapClientWithConfig("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl",
+		nil,
+		&Config{Dump: true, Logger: &customLogger{}},
+	)
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	var res *Response
+
+	res, err = soap.CallByStruct(CheckVatRequest{
+		CountryCode: "IE",
+		VatNumber:   "6388047V",
+	})
+	if err != nil {
+		t.Errorf("error in soap call: %s", err)
+	}
+
+	res.Unmarshal(&rv)
+	if rv.CountryCode != "IE" {
+		t.Errorf("error: %+v", rv)
+	}
+
+	_, err = soap.CallByStruct(nil)
+	if err == nil {
+		t.Error("err can't be nil")
 	}
 }
 
