@@ -24,14 +24,30 @@ type SoapParams interface{}
 type Params map[string]interface{}
 type ArrayParams [][2]interface{}
 
+type DumpLogger interface {
+	LogRequest(method string, dump []byte)
+	LogResponse(method string, dump []byte)
+}
+
+type fmtLogger struct{}
+
+func (l *fmtLogger) LogRequest(method string, dump []byte) {
+	fmt.Printf("Request:\n%v\n----\n", string(dump))
+}
+
+func (l *fmtLogger) LogResponse(method string, dump []byte) {
+	fmt.Printf("Response:\n%v\n----\n", string(dump))
+}
+
 // Config config the Client
 type Config struct {
-	Dump bool
+	Dump   bool
+	Logger DumpLogger
 }
 
 // SoapClient return new *Client to handle the requests with the WSDL
 func SoapClient(wsdl string, httpClient *http.Client) (*Client, error) {
-	return SoapClientWithConfig(wsdl, httpClient, &Config{Dump: false})
+	return SoapClientWithConfig(wsdl, httpClient, &Config{Dump: false, Logger: &fmtLogger{}})
 }
 
 // SoapClientWithConfig return new *Client to handle the requests with the WSDL
@@ -45,6 +61,10 @@ func SoapClientWithConfig(wsdl string, httpClient *http.Client, config *Config) 
 		httpClient = &http.Client{}
 	}
 
+	if config.Logger == nil {
+		config.Logger = &fmtLogger{}
+	}
+
 	c := &Client{
 		wsdl:       wsdl,
 		config:     config,
@@ -55,7 +75,7 @@ func SoapClientWithConfig(wsdl string, httpClient *http.Client, config *Config) 
 	return c, nil
 }
 
-// Client struct hold all the informations about WSDL,
+// Client struct hold all the information about WSDL,
 // request and response of the server
 type Client struct {
 	HTTPClient   *http.Client
@@ -209,7 +229,7 @@ func (p *process) doRequest(url string) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("Request:\n%v\n----\n", string(dump))
+		p.Client.config.Logger.LogRequest(p.Request.Method, dump)
 	}
 
 	if p.Client.Username != "" && p.Client.Password != "" {
@@ -233,7 +253,7 @@ func (p *process) doRequest(url string) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("Response:\n%v\n----\n", string(dump))
+		p.Client.config.Logger.LogResponse(p.Request.Method, dump)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
