@@ -24,6 +24,16 @@ var (
 			Err:    "error expected: xml: start tag with no name",
 		},
 	}
+
+	sliceParamsTests = []struct {
+		Params SliceParams
+		Err    string
+	}{
+		{
+			Params: SliceParams{"", ""},
+			Err:    "error expected: xml: start tag with no name",
+		},
+	}
 )
 
 func TestClient_MarshalXML(t *testing.T) {
@@ -61,6 +71,20 @@ func TestClient_MarshalXML3(t *testing.T) {
 	}
 
 	for _, test := range mapParamsTests {
+		_, err = soap.Call("checkVat", test.Params)
+		if err == nil {
+			t.Errorf(test.Err)
+		}
+	}
+}
+
+func TestClient_MarshalXML4(t *testing.T) {
+	soap, err := SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl", nil)
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	for _, test := range sliceParamsTests {
 		_, err = soap.Call("checkVat", test.Params)
 		if err == nil {
 			t.Errorf(test.Err)
