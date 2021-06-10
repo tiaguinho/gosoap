@@ -1,6 +1,7 @@
 package gosoap
 
 import (
+	"encoding/xml"
 	"testing"
 )
 
@@ -30,7 +31,7 @@ var (
 		Err    string
 	}{
 		{
-			Params: SliceParams{"", ""},
+			Params: SliceParams{xml.StartElement{}, xml.EndElement{}},
 			Err:    "error expected: xml: start tag with no name",
 		},
 	}
