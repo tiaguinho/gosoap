@@ -34,11 +34,9 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	}
 
 	tokens.startEnvelope()
-	if len(c.Client.HeaderParams) > 0 {
+	if c.Client.HeaderParams != nil {
 		tokens.startHeader(c.Client.HeaderName, namespace)
-
 		tokens.recursiveEncode(c.Client.HeaderParams)
-
 		tokens.endHeader(c.Client.HeaderName)
 	}
 
@@ -105,6 +103,8 @@ func (tokens *tokenData) recursiveEncode(hm interface{}) {
 	case reflect.String:
 		content := xml.CharData(v.String())
 		tokens.data = append(tokens.data, content)
+	case reflect.Struct:
+		tokens.data = append(tokens.data, v.Interface())
 	}
 }
 

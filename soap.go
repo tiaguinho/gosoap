@@ -16,13 +16,15 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
+type SoapParams interface{}
+
 // HeaderParams holds params specific to the header
 type HeaderParams map[string]interface{}
 
 // Params type is used to set the params in soap request
-type SoapParams interface{}
 type Params map[string]interface{}
 type ArrayParams [][2]interface{}
+type SliceParams []interface{}
 
 type DumpLogger interface {
 	LogRequest(method string, dump []byte)
@@ -82,7 +84,7 @@ type Client struct {
 	AutoAction   bool
 	URL          string
 	HeaderName   string
-	HeaderParams HeaderParams
+	HeaderParams SoapParams
 	Definitions  *wsdlDefinitions
 	// Must be set before first request otherwise has no effect, minimum is 15 minutes.
 	RefreshDefinitionsAfter time.Duration
