@@ -148,3 +148,36 @@ func main() {
 	log.Println("State: ", result.State)
 }
 ```
+
+#### Set Header params
+
+```go
+	soap.HeaderParams = gosoap.SliceParams{
+		xml.StartElement{
+			Name: xml.Name{
+				Space: "auth",
+				Local: "Login",
+			},
+		},
+		"user",
+		xml.EndElement{
+			Name: xml.Name{
+				Space: "auth",
+				Local: "Login",
+			},
+		},
+		xml.StartElement{
+			Name: xml.Name{
+				Space: "auth",
+				Local: "Password",
+			},
+		},
+		"P@ssw0rd",
+		xml.EndElement{
+			Name: xml.Name{
+				Space: "auth",
+				Local: "Password",
+			},
+		},
+	}
+```
