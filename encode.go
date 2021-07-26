@@ -30,7 +30,11 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 
 	namespace := ""
 	if c.Client.Definitions.Types != nil {
-		namespace = c.Client.Definitions.Types[0].XsdSchema[0].TargetNamespace
+		schema := c.Client.Definitions.Types[0].XsdSchema[0]
+		namespace = schema.TargetNamespace
+		if namespace == "" && len(schema.Imports) > 0 {
+			namespace = schema.Imports[0].Namespace
+		}
 	}
 
 	tokens.startEnvelope()
