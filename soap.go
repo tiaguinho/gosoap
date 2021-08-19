@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -261,6 +262,12 @@ func (p *process) doRequest(url string) ([]byte, error) {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		if !(p.Client.config != nil && p.Client.config.Dump) {
+			_, err := io.Copy(ioutil.Discard, resp.Body)
+			if err != nil {
+				return nil, err
+			}
+		}
 		return nil, errors.New("unexpected status code: " + resp.Status)
 	}
 
