@@ -63,15 +63,12 @@ func TestSoapClienWithClient(t *testing.T) {
 }
 
 type CheckVatRequest struct {
-	CountryCode string
-	VatNumber   string
+	CountryCode string `xml:"countryCode"`
+	VatNumber   string `xml:"vatNumber"`
 }
 
 func (r CheckVatRequest) SoapBuildRequest() *Request {
-	return NewRequest("checkVat", Params{
-		"countryCode": r.CountryCode,
-		"vatNumber":   r.VatNumber,
-	})
+	return NewRequest("checkVat", r)
 }
 
 type CheckVatResponse struct {
