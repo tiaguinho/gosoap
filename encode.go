@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 var (
@@ -110,10 +111,16 @@ func (tokens *tokenData) recursiveEncode(hm interface{}) {
 	case reflect.Struct:
 		for i := 0; i < v.NumField(); i++ {
 			field := v.Field(i)
+			var name string
+			name = v.Type().Field(i).Tag.Get("xml")
+			if name == "" {
+				name = v.Type().Field(i).Name
+				name = strings.ToLower(name[0:1]) + name[1:]
+			}
 			t := xml.StartElement{
 				Name: xml.Name{
 					Space: "",
-					Local: v.Type().Field(i).Tag.Get("xml"),
+					Local: name,
 				},
 			}
 			tokens.data = append(tokens.data, t)
