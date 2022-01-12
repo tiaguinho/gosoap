@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	soapPrefix = "soap"
+	soapPrefix                            = "soap"
 	customEnvelopeAttrs map[string]string = nil
 )
 
@@ -40,7 +40,9 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	tokens.startEnvelope()
 	if c.Client.HeaderParams != nil {
 		tokens.startHeader(c.Client.HeaderName, namespace)
-		tokens.recursiveEncode(c.Client.HeaderParams)
+		if err := tokens.recursiveEncode(c.Client.HeaderParams); err != nil {
+			return err
+		}
 		tokens.endHeader(c.Client.HeaderName)
 	}
 
@@ -49,27 +51,52 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 		return err
 	}
 
-	tokens.recursiveEncode(c.Request.Params)
+	if c.Request.UseXMLEncoder {
+		if err := tokens.flush(e); err != nil {
+			return err
+		}
+		if err := e.Encode(c.Request.Params); err != nil {
+			return err
+		}
+		if err := tokens.flush(e); err != nil {
+			return err
+		}
+	} else {
+		tokens.startBodyPayload(c.Request.Method, namespace)
+		if err := tokens.recursiveEncode(c.Request.Params); err != nil {
+			return err
+		}
+		tokens.endBodyPayload(c.Request.Method)
+	}
 
 	//end envelope
-	tokens.endBody(c.Request.Method)
+	tokens.endBody()
 	tokens.endEnvelope()
 
+	if err := tokens.flush(e); err != nil {
+		return err
+	}
+
+	return e.Flush()
+}
+
+func (tokens *tokenData) flush(e *xml.Encoder) error {
 	for _, t := range tokens.data {
 		err := e.EncodeToken(t)
 		if err != nil {
 			return err
 		}
 	}
-
-	return e.Flush()
+	tokens.data = []xml.Token{}
+	return nil
 }
 
 type tokenData struct {
 	data []xml.Token
+	// encoder *xml.Encoder
 }
 
-func (tokens *tokenData) recursiveEncode(hm interface{}) {
+func (tokens *tokenData) recursiveEncode(hm interface{}) error {
 	v := reflect.ValueOf(hm)
 
 	switch v.Kind() {
@@ -83,12 +110,16 @@ func (tokens *tokenData) recursiveEncode(hm interface{}) {
 			}
 
 			tokens.data = append(tokens.data, t)
-			tokens.recursiveEncode(v.MapIndex(key).Interface())
+			if err := tokens.recursiveEncode(v.MapIndex(key).Interface()); err != nil {
+				return err
+			}
 			tokens.data = append(tokens.data, xml.EndElement{Name: t.Name})
 		}
 	case reflect.Slice:
 		for i := 0; i < v.Len(); i++ {
-			tokens.recursiveEncode(v.Index(i).Interface())
+			if err := tokens.recursiveEncode(v.Index(i).Interface()); err != nil {
+				return err
+			}
 		}
 	case reflect.Array:
 		if v.Len() == 2 {
@@ -101,7 +132,9 @@ func (tokens *tokenData) recursiveEncode(hm interface{}) {
 			}
 
 			tokens.data = append(tokens.data, t)
-			tokens.recursiveEncode(v.Index(1).Interface())
+			if err := tokens.recursiveEncode(v.Index(1).Interface()); err != nil {
+				return err
+			}
 			tokens.data = append(tokens.data, xml.EndElement{Name: t.Name})
 		}
 	case reflect.String:
@@ -110,6 +143,7 @@ func (tokens *tokenData) recursiveEncode(hm interface{}) {
 	case reflect.Struct:
 		tokens.data = append(tokens.data, v.Interface())
 	}
+	return nil
 }
 
 func (tokens *tokenData) startEnvelope() {
@@ -130,7 +164,7 @@ func (tokens *tokenData) startEnvelope() {
 		e.Attr = make([]xml.Attr, 0)
 		for local, value := range customEnvelopeAttrs {
 			e.Attr = append(e.Attr, xml.Attr{
-				Name: xml.Name{Space: "", Local: local},
+				Name:  xml.Name{Space: "", Local: local},
 				Value: value,
 			})
 		}
@@ -174,8 +208,6 @@ func (tokens *tokenData) startHeader(m, n string) {
 	}
 
 	tokens.data = append(tokens.data, h, r)
-
-	return
 }
 
 func (tokens *tokenData) endHeader(m string) {
@@ -202,17 +234,21 @@ func (tokens *tokenData) endHeader(m string) {
 }
 
 func (tokens *tokenData) startBody(m, n string) error {
+	if m == "" || n == "" {
+		return fmt.Errorf("method or namespace is empty")
+	}
+
 	b := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
 			Local: fmt.Sprintf("%s:Body", soapPrefix),
 		},
 	}
+	tokens.data = append(tokens.data, b)
+	return nil
+}
 
-	if m == "" || n == "" {
-		return fmt.Errorf("method or namespace is empty")
-	}
-
+func (tokens *tokenData) startBodyPayload(m, n string) {
 	r := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
@@ -222,27 +258,26 @@ func (tokens *tokenData) startBody(m, n string) error {
 			{Name: xml.Name{Space: "", Local: "xmlns"}, Value: n},
 		},
 	}
-
-	tokens.data = append(tokens.data, b, r)
-
-	return nil
+	tokens.data = append(tokens.data, r)
 }
 
 // endToken close body of the envelope
-func (tokens *tokenData) endBody(m string) {
-	b := xml.EndElement{
-		Name: xml.Name{
-			Space: "",
-			Local: fmt.Sprintf("%s:Body", soapPrefix),
-		},
-	}
-
+func (tokens *tokenData) endBodyPayload(m string) {
 	r := xml.EndElement{
 		Name: xml.Name{
 			Space: "",
 			Local: m,
 		},
 	}
+	tokens.data = append(tokens.data, r)
+}
 
-	tokens.data = append(tokens.data, r, b)
+func (tokens *tokenData) endBody() {
+	b := xml.EndElement{
+		Name: xml.Name{
+			Space: "",
+			Local: fmt.Sprintf("%s:Body", soapPrefix),
+		},
+	}
+	tokens.data = append(tokens.data, b)
 }

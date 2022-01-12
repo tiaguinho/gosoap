@@ -185,14 +185,14 @@ func TestClient_Call(t *testing.T) {
 	}
 
 	c := &Client{}
-	res, err = c.Call("", Params{})
+	_, err = c.Call("", Params{})
 	if err == nil {
 		t.Errorf("error expected but nothing got.")
 	}
 
 	c.SetWSDL("://test.")
 
-	res, err = c.Call("checkVat", params)
+	_, err = c.Call("checkVat", params)
 	if err == nil {
 		t.Errorf("invalid WSDL")
 	}

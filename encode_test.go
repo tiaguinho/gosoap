@@ -2,6 +2,7 @@ package gosoap
 
 import (
 	"encoding/xml"
+	"fmt"
 	"testing"
 )
 
@@ -96,7 +97,7 @@ func TestClient_MarshalXML4(t *testing.T) {
 func TestSetCustomEnvelope(t *testing.T) {
 	SetCustomEnvelope("soapenv", map[string]string{
 		"xmlns:soapenv": "http://schemas.xmlsoap.org/soap/envelope/",
-		"xmlns:tem": "http://tempuri.org/",
+		"xmlns:tem":     "http://tempuri.org/",
 	})
 
 	soap, err := SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl", nil)
@@ -109,5 +110,54 @@ func TestSetCustomEnvelope(t *testing.T) {
 		if err == nil {
 			t.Errorf(test.Err)
 		}
+	}
+}
+
+type checkVatApprox struct {
+	XMLName     xml.Name `xml:"urn:ec.europa.eu:taxud:vies:services:checkVat:types checkVatApprox"`
+	CountryCode string   `xml:"countryCode"`
+	VatNumber   string   `xml:"vatNumber"`
+	TraderName  string   `xml:"traderName,omitempty"`
+}
+type checkVatApproxResponse struct {
+	CountryCode string `xml:"countryCode"`
+	VatNumber   string `xml:"vatNumber"`
+	Valid       bool   `xml:"valid"`
+	TraderName  string `xml:"traderName,omitempty"`
+}
+
+func (cva *checkVatApprox) SoapBuildRequest() *Request {
+	r := NewRequest("checkVatApprox", cva)
+	// if err!=nil{
+	// 	t.Errorf("error not expected: %s", err)
+	// }
+	r.UseXMLEncoder = true
+	return r
+}
+func TestClient_MarshalWithEncoder(t *testing.T) {
+	soap, err := SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl", nil)
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	resp, err := soap.CallByStruct(&checkVatApprox{CountryCode: "fr", VatNumber: "67586586"})
+	if err != nil {
+		t.Errorf("error not expected: %s", err)
+	}
+
+	var cvaResp checkVatApproxResponse
+	err = resp.Unmarshal(&cvaResp)
+	if err != nil {
+		t.Errorf("unmarshal error not expected: %s", err)
+	}
+
+	fmt.Printf("\n  resp: %#v\n", resp)
+	fmt.Printf("  payload: %s\n", resp.Payload)
+	fmt.Printf("  body: %s\n", resp.Body)
+	fmt.Printf("  err: %s\n", err)
+	fmt.Printf("   unmarshaled: %#v\n", cvaResp)
+	expectResp:=checkVatApproxResponse{CountryCode:"FR",VatNumber:"67586586",Valid:false,TraderName:"---"}
+	if cvaResp!= expectResp{
+		t.Errorf("got unexpected response: %#v",cvaResp)
 	}
 }
