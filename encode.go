@@ -46,7 +46,7 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 		tokens.endHeader(c.Client.HeaderName)
 	}
 
-	err := tokens.startBody(c.Request.Method, namespace)
+	err := tokens.startSoapBody(c.Request.Method, namespace)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	}
 
 	//end envelope
-	tokens.endBody()
+	tokens.endSoapBody()
 	tokens.endEnvelope()
 
 	if err := tokens.flush(e); err != nil {
@@ -68,30 +68,38 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 }
 
 func (tokens *tokenData) bodyContents(c process, namespace string, e *xml.Encoder) error {
-	useEncodingXml := false
+	isStruct := false
 	t := reflect.TypeOf(c.Request.Params)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
 	if t.Kind() == reflect.Struct {
-		useEncodingXml = true
+		isStruct = true
 	}
-	if useEncodingXml {
+	if isStruct {
+		// Just use encoding/xml directly for structs, which allows for much more
+		// sophisticated control over the XML structure. The top-level element
+		// is intrinsically part of the encoding, so we don't need to do that
+		// for ourselves
+
+		// Flush any pending tokens before we send things directly to the encoder
 		if err := tokens.flush(e); err != nil {
 			return err
 		}
 		if err := e.Encode(c.Request.Params); err != nil {
 			return err
 		}
-		if err := tokens.flush(e); err != nil {
-			return err
-		}
+		// if err := tokens.flush(e); err != nil {
+		// 	return err
+		// }
 	} else {
-		tokens.startBodyPayload(c.Request.Method, namespace)
+		// For non-structs, we have to explicitly wrap a top-level element around
+		// the actual data
+		tokens.startBodyContents(c.Request.Method, namespace)
 		if err := tokens.recursiveEncode(c.Request.Params); err != nil {
 			return err
 		}
-		tokens.endBodyPayload(c.Request.Method)
+		tokens.endBodyContents(c.Request.Method)
 	}
 	return nil
 }
@@ -109,7 +117,6 @@ func (tokens *tokenData) flush(e *xml.Encoder) error {
 
 type tokenData struct {
 	data []xml.Token
-	// encoder *xml.Encoder
 }
 
 func (tokens *tokenData) recursiveEncode(hm interface{}) error {
@@ -249,7 +256,7 @@ func (tokens *tokenData) endHeader(m string) {
 	tokens.data = append(tokens.data, r, h)
 }
 
-func (tokens *tokenData) startBody(m, n string) error {
+func (tokens *tokenData) startSoapBody(m, n string) error {
 	if m == "" || n == "" {
 		return fmt.Errorf("method or namespace is empty")
 	}
@@ -264,7 +271,7 @@ func (tokens *tokenData) startBody(m, n string) error {
 	return nil
 }
 
-func (tokens *tokenData) startBodyPayload(m, n string) {
+func (tokens *tokenData) startBodyContents(m, n string) {
 	r := xml.StartElement{
 		Name: xml.Name{
 			Space: "",
@@ -278,7 +285,7 @@ func (tokens *tokenData) startBodyPayload(m, n string) {
 }
 
 // endToken close body of the envelope
-func (tokens *tokenData) endBodyPayload(m string) {
+func (tokens *tokenData) endBodyContents(m string) {
 	r := xml.EndElement{
 		Name: xml.Name{
 			Space: "",
@@ -288,7 +295,7 @@ func (tokens *tokenData) endBodyPayload(m string) {
 	tokens.data = append(tokens.data, r)
 }
 
-func (tokens *tokenData) endBody() {
+func (tokens *tokenData) endSoapBody() {
 	b := xml.EndElement{
 		Name: xml.Name{
 			Space: "",
