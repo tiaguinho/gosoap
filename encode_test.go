@@ -2,7 +2,6 @@ package gosoap
 
 import (
 	"encoding/xml"
-	"fmt"
 	"testing"
 )
 
@@ -115,7 +114,7 @@ func TestSetCustomEnvelope(t *testing.T) {
 
 type checkVatApprox struct {
 	XMLName     xml.Name `xml:"urn:ec.europa.eu:taxud:vies:services:checkVat:types checkVatApprox"`
-	CountryCode string   `xml:"countryCode"`
+	CountryCode string   `xml:"countryCode,omitempty"`
 	VatNumber   string   `xml:"vatNumber"`
 	TraderName  string   `xml:"traderName,omitempty"`
 }
@@ -126,38 +125,74 @@ type checkVatApproxResponse struct {
 	TraderName  string `xml:"traderName,omitempty"`
 }
 
+var encoderParamsTests = []struct {
+	Desc     string
+	WSDL     string
+	Params   *checkVatApprox
+	Response *checkVatApproxResponse
+	Err      string
+}{
+	{
+		Desc:   "Fetch a non-existent VAT number",
+		WSDL:   "http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl",
+		Params: &checkVatApprox{CountryCode: "fr", VatNumber: "invalid"},
+		Response: &checkVatApproxResponse{
+			CountryCode: "FR", VatNumber: "invalid", Valid: false, TraderName: "---",
+		},
+	},
+	{
+		Desc:   "Fetch a valid VAT number",
+		WSDL:   "http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl",
+		Params: &checkVatApprox{CountryCode: "fr", VatNumber: "45327920054"},
+		Response: &checkVatApproxResponse{
+			CountryCode: "FR", VatNumber: "45327920054", Valid: true, TraderName: "SAS EUROMEDIA",
+		},
+	},
+	{
+		Desc:   "Fetch with empty params",
+		WSDL:   "http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl",
+		Params: &checkVatApprox{},
+		Err:    `[soap:Server]: Invalid_input | Detail: `,
+	},
+}
+
 func (cva *checkVatApprox) SoapBuildRequest() *Request {
 	r := NewRequest("checkVatApprox", cva)
-	// if err!=nil{
-	// 	t.Errorf("error not expected: %s", err)
-	// }
 	r.UseXMLEncoder = true
 	return r
 }
 func TestClient_MarshalWithEncoder(t *testing.T) {
-	soap, err := SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl", nil)
-	if err != nil {
-		t.Errorf("error not expected: %s", err)
-	}
+	for _, test := range encoderParamsTests {
+		soap, err := SoapClient(test.WSDL, nil)
+		if err != nil {
+			t.Errorf("%s: error not expected creating client: %s", test.Desc, err)
+			continue
+		}
 
-	resp, err := soap.CallByStruct(&checkVatApprox{CountryCode: "fr", VatNumber: "67586586"})
-	if err != nil {
-		t.Errorf("error not expected: %s", err)
-	}
+		resp, err := soap.CallByStruct(test.Params)
+		if err != nil {
+			t.Errorf("%s: error not expected calling API: %s", test.Desc, err)
+			continue
+		}
 
-	var cvaResp checkVatApproxResponse
-	err = resp.Unmarshal(&cvaResp)
-	if err != nil {
-		t.Errorf("unmarshal error not expected: %s", err)
-	}
+		var actualResponse checkVatApproxResponse
+		err = resp.Unmarshal(&actualResponse)
+		if test.Err != "" {
+			if err == nil {
+				t.Errorf("%s: expected error, but got response: %#v", test.Desc, actualResponse)
+				continue
+			} else if err.Error() != test.Err {
+				t.Errorf("%s: error doesn't match expectation: %s", test.Desc, err)
+			}
+		} else {
+			if err != nil {
+				t.Errorf("%s: unmarshal error not expected: %s", test.Desc, err)
+				continue
+			} else if actualResponse != *test.Response {
+				t.Errorf("%s: response doesn't match expectation: %#v", test.Desc, actualResponse)
+				continue
+			}
 
-	fmt.Printf("\n  resp: %#v\n", resp)
-	fmt.Printf("  payload: %s\n", resp.Payload)
-	fmt.Printf("  body: %s\n", resp.Body)
-	fmt.Printf("  err: %s\n", err)
-	fmt.Printf("   unmarshaled: %#v\n", cvaResp)
-	expectResp:=checkVatApproxResponse{CountryCode:"FR",VatNumber:"67586586",Valid:false,TraderName:"---"}
-	if cvaResp!= expectResp{
-		t.Errorf("got unexpected response: %#v",cvaResp)
+		}
 	}
 }

@@ -51,6 +51,23 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 		return err
 	}
 
+	err = tokens.bodyContents(c, namespace, e)
+	if err != nil {
+		return err
+	}
+
+	//end envelope
+	tokens.endBody()
+	tokens.endEnvelope()
+
+	if err := tokens.flush(e); err != nil {
+		return err
+	}
+
+	return e.Flush()
+}
+
+func (tokens *tokenData) bodyContents(c process, namespace string, e *xml.Encoder) error {
 	if c.Request.UseXMLEncoder {
 		if err := tokens.flush(e); err != nil {
 			return err
@@ -68,16 +85,7 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 		}
 		tokens.endBodyPayload(c.Request.Method)
 	}
-
-	//end envelope
-	tokens.endBody()
-	tokens.endEnvelope()
-
-	if err := tokens.flush(e); err != nil {
-		return err
-	}
-
-	return e.Flush()
+	return nil
 }
 
 func (tokens *tokenData) flush(e *xml.Encoder) error {
