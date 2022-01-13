@@ -125,6 +125,11 @@ type checkVatApproxResponse struct {
 	TraderName  string `xml:"traderName,omitempty"`
 }
 
+func (cva *checkVatApprox) SoapBuildRequest() *Request {
+	r := NewRequest("checkVatApprox", cva)
+	return r
+}
+
 var encoderParamsTests = []struct {
 	Desc     string
 	WSDL     string
@@ -156,11 +161,6 @@ var encoderParamsTests = []struct {
 	},
 }
 
-func (cva *checkVatApprox) SoapBuildRequest() *Request {
-	r := NewRequest("checkVatApprox", cva)
-	r.UseXMLEncoder = true
-	return r
-}
 func TestClient_MarshalWithEncoder(t *testing.T) {
 	for _, test := range encoderParamsTests {
 		soap, err := SoapClient(test.WSDL, nil)

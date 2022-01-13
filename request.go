@@ -6,9 +6,8 @@ import (
 
 // Request Soap Request
 type Request struct {
-	Method        string
-	Params        SoapParams
-	UseXMLEncoder bool
+	Method string
+	Params SoapParams
 }
 
 func NewRequest(m string, p SoapParams) *Request {

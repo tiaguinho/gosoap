@@ -68,7 +68,15 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 }
 
 func (tokens *tokenData) bodyContents(c process, namespace string, e *xml.Encoder) error {
-	if c.Request.UseXMLEncoder {
+	useEncodingXml := false
+	t := reflect.TypeOf(c.Request.Params)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Kind() == reflect.Struct {
+		useEncodingXml = true
+	}
+	if useEncodingXml {
 		if err := tokens.flush(e); err != nil {
 			return err
 		}
