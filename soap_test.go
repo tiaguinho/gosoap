@@ -68,10 +68,7 @@ type CheckVatRequest struct {
 }
 
 func (r CheckVatRequest) SoapBuildRequest() *Request {
-	return NewRequest("checkVat", Params{
-		"countryCode": r.CountryCode,
-		"vatNumber":   r.VatNumber,
-	})
+	return NewRequest("checkVat", r)
 }
 
 type CheckVatResponse struct {
