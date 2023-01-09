@@ -100,12 +100,12 @@ type Client struct {
 	config               *Config
 }
 
-// Call call's the method m with Params p
+// Call calls the method m with Params p
 func (c *Client) Call(m string, p SoapParams) (res *Response, err error) {
 	return c.Do(NewRequest(m, p))
 }
 
-// CallByStruct call's by struct
+// CallByStruct calls by struct
 func (c *Client) CallByStruct(s RequestStruct) (res *Response, err error) {
 	req, err := NewRequestByStruct(s)
 	if err != nil {
