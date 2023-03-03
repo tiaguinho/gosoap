@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	soapPrefix = "soap"
+	soapPrefix                            = "soap"
 	customEnvelopeAttrs map[string]string = nil
 )
 
@@ -17,6 +17,15 @@ func SetCustomEnvelope(prefix string, attrs map[string]string) {
 	if attrs != nil {
 		customEnvelopeAttrs = attrs
 	}
+}
+
+func checkForValue(userValue string, envelopAttrs map[string]string) bool {
+	for _, value := range envelopAttrs {
+		if value == userValue {
+			return true
+		}
+	}
+	return false
 }
 
 // MarshalXML envelope the body and encode to xml
@@ -130,7 +139,7 @@ func (tokens *tokenData) startEnvelope() {
 		e.Attr = make([]xml.Attr, 0)
 		for local, value := range customEnvelopeAttrs {
 			e.Attr = append(e.Attr, xml.Attr{
-				Name: xml.Name{Space: "", Local: local},
+				Name:  xml.Name{Space: "", Local: local},
 				Value: value,
 			})
 		}
@@ -218,9 +227,16 @@ func (tokens *tokenData) startBody(m, n string) error {
 			Space: "",
 			Local: m,
 		},
-		Attr: []xml.Attr{
-			{Name: xml.Name{Space: "", Local: "xmlns"}, Value: n},
-		},
+	}
+
+	if !checkForValue(n, customEnvelopeAttrs) {
+		r = xml.StartElement{
+			Name: xml.Name{
+				Space: "",
+				Local: m,
+			}, Attr: []xml.Attr{
+				{Name: xml.Name{Space: "", Local: "xmlns"}, Value: n}},
+		}
 	}
 
 	tokens.data = append(tokens.data, b, r)
