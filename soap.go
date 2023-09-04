@@ -185,7 +185,8 @@ func (c *Client) Do(req *Request) (res *Response, err error) {
 		return nil, err
 	}
 
-	b, err := p.doRequest(c.Definitions.Services[0].Ports[0].SoapAddresses[0].Location)
+	soapURL := c.wsdl[:len(c.wsdl)-5]
+	b, err := p.doRequest(soapURL)
 	if err != nil {
 		return nil, ErrorWithPayload{err, p.Payload}
 	}
