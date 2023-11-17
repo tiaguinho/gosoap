@@ -2,6 +2,7 @@ package gosoap
 
 import (
 	"bytes"
+	"context"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -101,18 +102,28 @@ type Client struct {
 }
 
 // Call call's the method m with Params p
+func (c *Client) CallContext(ctx context.Context, m string, p SoapParams) (res *Response, err error) {
+	return c.Do(ctx, NewRequest(m, p))
+}
+
+// Call call's the method m with Params p
 func (c *Client) Call(m string, p SoapParams) (res *Response, err error) {
-	return c.Do(NewRequest(m, p))
+	return c.CallContext(context.Background(), m, p)
 }
 
 // CallByStruct call's by struct
-func (c *Client) CallByStruct(s RequestStruct) (res *Response, err error) {
+func (c *Client) CallByStructContext(ctx context.Context, s RequestStruct) (res *Response, err error) {
 	req, err := NewRequestByStruct(s)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.Do(req)
+	return c.Do(ctx, req)
+}
+
+// CallByStruct call's by struct
+func (c *Client) CallByStruct(s RequestStruct) (res *Response, err error) {
+	return c.CallByStructContext(context.Background(), s)
 }
 
 func (c *Client) waitAndRefreshDefinitions(d time.Duration) {
@@ -145,7 +156,7 @@ func (c *Client) SetWSDL(wsdl string) {
 }
 
 // Do Process Soap Request
-func (c *Client) Do(req *Request) (res *Response, err error) {
+func (c *Client) Do(ctx context.Context, req *Request) (res *Response, err error) {
 	c.onDefinitionsRefresh.Wait()
 	c.onRequest.Add(1)
 	defer c.onRequest.Done()
@@ -185,7 +196,7 @@ func (c *Client) Do(req *Request) (res *Response, err error) {
 		return nil, err
 	}
 
-	b, err := p.doRequest(c.Definitions.Services[0].Ports[0].SoapAddresses[0].Location)
+	b, err := p.doRequest(ctx, c.Definitions.Services[0].Ports[0].SoapAddresses[0].Location)
 	if err != nil {
 		return nil, ErrorWithPayload{err, p.Payload}
 	}
@@ -221,8 +232,8 @@ type process struct {
 
 // doRequest makes new request to the server using the c.Method, c.URL and the body.
 // body is enveloped in Do method
-func (p *process) doRequest(url string) ([]byte, error) {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(p.Payload))
+func (p *process) doRequest(ctx context.Context, url string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(p.Payload))
 	if err != nil {
 		return nil, err
 	}
