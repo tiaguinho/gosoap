@@ -1,12 +1,16 @@
 package gosoap
 
 import (
+	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"regexp"
 	"testing"
+	"time"
 )
 
 var (
@@ -291,17 +295,17 @@ func TestProcess_doRequest(t *testing.T) {
 		},
 	}
 
-	_, err := c.doRequest("")
+	_, err := c.doRequest(context.Background(), "")
 	if err == nil {
 		t.Errorf("body is empty")
 	}
 
-	_, err = c.doRequest("://teste.")
+	_, err = c.doRequest(context.Background(), "://teste.")
 	if err == nil {
 		t.Errorf("invalid WSDL")
 	}
 
-	_, err = c.doRequest("https://google.com/non-existent-url")
+	_, err = c.doRequest(context.Background(), "https://google.com/non-existent-url")
 	if err == nil {
 		t.Errorf("err can't be nil")
 	}
@@ -309,4 +313,19 @@ func TestProcess_doRequest(t *testing.T) {
 	if err != nil && err.Error() != "unexpected status code: 404 Not Found" {
 		t.Errorf("unexpected error: %s", err)
 	}
+
+	doneC := make(chan struct{})
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-doneC
+	}))
+	defer ts.Close()
+
+	ctx, cancelF := context.WithTimeout(context.Background(), time.Second)
+	defer cancelF()
+	_, err = c.doRequest(ctx, ts.URL)
+
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("request didn't timeout")
+	}
+	close(doneC)
 }
