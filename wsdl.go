@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"golang.org/x/net/html/charset"
 )
@@ -209,6 +210,48 @@ func (wsdl *wsdlDefinitions) GetSoapActionFromWsdlOperation(operation string) st
 		}
 	}
 	return ""
+}
+
+// if any input message part name is set in the wsdlOperation binding, use that.
+func (wsdl *wsdlDefinitions) GetInputMessagePartFromWsdlOperation(operation string) string {
+	portTypeName := trimNamespace(wsdl.Bindings[0].Type)
+	var portType *wsdlPortTypes
+	var message string
+
+	for _, o := range wsdl.PortTypes {
+		if o.Name == portTypeName {
+			portType = o
+		}
+	}
+
+	if portType == nil {
+		return ""
+	}
+
+	for _, o := range portType.Operations {
+		if o.Name == operation {
+			message = trimNamespace(o.Inputs[0].Message)
+		}
+	}
+
+	if len(message) > 0 {
+		for _, o := range wsdl.Messages {
+			if o.Name == message {
+				return o.Parts[0].Element
+			}
+		}
+	}
+
+	return ""
+}
+
+func trimNamespace(str string) string {
+	colonIndex := strings.Index(str, ":")
+	if colonIndex != -1 {
+		return str[colonIndex+1:]
+	}
+
+	return str
 }
 
 // Fault response
