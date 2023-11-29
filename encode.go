@@ -44,7 +44,7 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 		tokens.endHeader(c.Client.HeaderName)
 	}
 
-	err := tokens.startBody(c.Request.Method, namespace)
+	err := tokens.startBody(c.MessagePart, namespace)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (c process) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	tokens.recursiveEncode(c.Request.Params)
 
 	//end envelope
-	tokens.endBody(c.Request.Method)
+	tokens.endBody(c.MessagePart)
 	tokens.endEnvelope()
 
 	for _, t := range tokens.data {
