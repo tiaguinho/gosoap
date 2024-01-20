@@ -122,6 +122,7 @@ type xsdElement struct {
 	MaxOccurs   string          `xml:"maxOccurs,attr"`
 	ComplexType *xsdComplexType `xml:"http://www.w3.org/2001/XMLSchema complexType"`
 	SimpleType  *xsdSimpleType  `xml:"http://www.w3.org/2001/XMLSchema simpleType"`
+  Attribute *xsdAttribute     `xml:"http://www.w3.org/2001/XMLSchema attribute"`
 }
 
 type xsdComplexType struct {
