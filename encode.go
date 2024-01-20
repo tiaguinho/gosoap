@@ -82,7 +82,10 @@ func (tokens *tokenData) recursiveEncode(hm interface{}) {
 				},
 			}
 
-      hasAttribute := false
+      if key.String() == "$attributes" {
+        continue
+      }
+
       attributeChild := v.MapIndex(key)
 
       if attributeChild.IsValid() && attributeChild.Kind() == reflect.Interface {
@@ -96,7 +99,6 @@ func (tokens *tokenData) recursiveEncode(hm interface{}) {
                       for iter := underlyingValue.MapRange(); iter.Next(); {
                           key := iter.Key().Interface()
                           value := iter.Value().Interface()
-                          hasAttribute = true
                           t.Attr = append(t.Attr, xml.Attr{
                             Name: xml.Name{Space: "", Local: key.(string)},
                             Value: value.(string),
@@ -108,9 +110,7 @@ func (tokens *tokenData) recursiveEncode(hm interface{}) {
       }
 
 			tokens.data = append(tokens.data, t)
-      if (!hasAttribute) {
-        tokens.recursiveEncode(v.MapIndex(key).Interface())
-      }
+      tokens.recursiveEncode(v.MapIndex(key).Interface())
 			tokens.data = append(tokens.data, xml.EndElement{Name: t.Name})
 		}
 	case reflect.Slice:
