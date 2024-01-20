@@ -82,8 +82,35 @@ func (tokens *tokenData) recursiveEncode(hm interface{}) {
 				},
 			}
 
+      hasAttribute := false
+      attributeChild := v.MapIndex(key)
+
+      if attributeChild.IsValid() && attributeChild.Kind() == reflect.Interface {
+          actualValue := attributeChild.Elem()
+          if actualValue.Kind() == reflect.Map {
+              attributesKey := reflect.ValueOf("$attributes")
+              attributesValue := actualValue.MapIndex(attributesKey)
+              if attributesValue.IsValid() && attributesValue.Kind() == reflect.Interface {
+                  underlyingValue := attributesValue.Elem()
+                  if underlyingValue.Kind() == reflect.Map {
+                      for iter := underlyingValue.MapRange(); iter.Next(); {
+                          key := iter.Key().Interface()
+                          value := iter.Value().Interface()
+                          hasAttribute = true
+                          t.Attr = append(t.Attr, xml.Attr{
+                            Name: xml.Name{Space: "", Local: key.(string)},
+                            Value: value.(string),
+                          })
+                      }
+                  }
+              }
+          }
+      }
+
 			tokens.data = append(tokens.data, t)
-			tokens.recursiveEncode(v.MapIndex(key).Interface())
+      if (!hasAttribute) {
+        tokens.recursiveEncode(v.MapIndex(key).Interface())
+      }
 			tokens.data = append(tokens.data, xml.EndElement{Name: t.Name})
 		}
 	case reflect.Slice:
