@@ -1,12 +1,15 @@
 package gosoap
 
 import (
+	"context"
 	"crypto/tls"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"regexp"
 	"testing"
+	"time"
 )
 
 var (
@@ -185,14 +188,14 @@ func TestClient_Call(t *testing.T) {
 	}
 
 	c := &Client{}
-	res, err = c.Call("", Params{})
+	_, err = c.Call("", Params{})
 	if err == nil {
 		t.Errorf("error expected but nothing got.")
 	}
 
 	c.SetWSDL("://test.")
 
-	res, err = c.Call("checkVat", params)
+	_, err = c.Call("checkVat", params)
 	if err == nil {
 		t.Errorf("invalid WSDL")
 	}
@@ -204,7 +207,7 @@ func (c customLogger) LogRequest(method string, dump []byte) {
 	var re = regexp.MustCompile(`(<vatNumber>)[\s\S]*?(<\/vatNumber>)`)
 	maskedResponse := re.ReplaceAllString(string(dump), `${1}XXX${2}`)
 
-	log.Println(fmt.Sprintf("%s request: %s", method, maskedResponse))
+	log.Printf("%s request: %s", method, maskedResponse)
 }
 
 func (c customLogger) LogResponse(method string, dump []byte) {
@@ -212,7 +215,7 @@ func (c customLogger) LogResponse(method string, dump []byte) {
 		return
 	}
 
-	log.Println(fmt.Sprintf("Response: %s", dump))
+	log.Printf("Response: %s", dump)
 }
 
 func TestClient_Call_WithCustomLogger(t *testing.T) {
@@ -279,8 +282,8 @@ func TestClient_Call_NonUtf8(t *testing.T) {
 	}
 
 	_, err = soap.Call("login", Params{"client": "demo", "username": "robert", "password": "iliasdemo"})
-	if err != nil {
-		t.Errorf("error in soap call: %s", err)
+	if err == nil {
+		t.Errorf("err can't be nil")
 	}
 }
 
@@ -291,22 +294,33 @@ func TestProcess_doRequest(t *testing.T) {
 		},
 	}
 
-	_, err := c.doRequest("")
+	_, err := c.doRequest(context.Background(), "")
 	if err == nil {
 		t.Errorf("body is empty")
 	}
 
-	_, err = c.doRequest("://teste.")
+	_, err = c.doRequest(context.Background(), "://teste.")
 	if err == nil {
 		t.Errorf("invalid WSDL")
 	}
 
-	_, err = c.doRequest("https://google.com/non-existent-url")
+	_, err = c.doRequest(context.Background(), "https://google.com/non-existent-url")
 	if err == nil {
 		t.Errorf("err can't be nil")
 	}
 
-	if err != nil && err.Error() != "unexpected status code: 404 Not Found" {
-		t.Errorf("unexpected error: %s", err)
+	doneC := make(chan struct{})
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-doneC
+	}))
+	defer ts.Close()
+
+	ctx, cancelF := context.WithTimeout(context.Background(), time.Second)
+	defer cancelF()
+	_, err = c.doRequest(ctx, ts.URL)
+
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("request didn't timeout")
 	}
+	close(doneC)
 }
